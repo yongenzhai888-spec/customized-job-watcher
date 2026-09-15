@@ -36,12 +36,16 @@ class Mailer(ABC):
         """发送邮件并返回一句人类可读的结果说明。"""
 
 
+class AuthError(RuntimeError):
+    """SMTP 登录被拒绝。附带针对该邮箱服务商的排查建议。"""
+
+
 class SMTPMailer(Mailer):
     def __init__(self, config: MailConfig) -> None:
         self.config = config
 
-    def send(self, content: EmailContent) -> str:
-        message = build_message(content, self.config)
+    def _connect(self) -> smtplib.SMTP:
+        """建立连接并完成登录，调用方负责 quit。"""
         cfg = self.config
         context = ssl.create_default_context()
         if cfg.use_ssl:
@@ -54,13 +58,57 @@ class SMTPMailer(Mailer):
                 server.starttls(context=context)
                 server.ehlo()
             server.login(cfg.username, cfg.password)
+        except smtplib.SMTPAuthenticationError as exc:
+            _close(server)
+            raise AuthError(auth_hint(cfg, exc)) from exc
+        except Exception:
+            _close(server)
+            raise
+        return server
+
+    def verify(self) -> str:
+        """只验证能否登录，不发任何邮件。"""
+        _close(self._connect())
+        return f"SMTP 登录成功：{self.config.username} @ {self.config.host}:{self.config.port}"
+
+    def send(self, content: EmailContent) -> str:
+        message = build_message(content, self.config)
+        server = self._connect()
+        try:
             server.send_message(message)
         finally:
-            try:
-                server.quit()
-            except smtplib.SMTPException:  # pragma: no cover - 关闭连接失败无需中断
-                server.close()
-        return f"邮件已发送至 {', '.join(cfg.recipients)}"
+            _close(server)
+        return f"邮件已发送至 {', '.join(self.config.recipients)}"
+
+
+def auth_hint(config: MailConfig, exc: Exception) -> str:
+    """把 SMTP 的认证失败翻译成「接下来该干什么」。"""
+    host = config.host.lower()
+    if "gmail" in host or "google" in host:
+        advice = (
+            "Gmail 不接受账号密码，必须用 16 位「应用专用密码」，而它又要求先开启两步验证：\n"
+            "  1. 开启两步验证：https://myaccount.google.com/signinoptions/twosv\n"
+            "  2. 创建应用专用密码：https://myaccount.google.com/apppasswords\n"
+            "     （若这里提示「您的账号不支持您正在尝试的设置」，说明第 1 步还没真正生效）\n"
+            "  3. 把生成的 16 位密码去掉空格填进 SMTP_PASSWORD\n"
+            "如果账号加入了「高级保护计划」、两步验证只绑了实体安全密钥，"
+            "或这是被管理员限制的 Workspace 账号，就拿不到应用专用密码，请改用 QQ / 163 邮箱发信。"
+        )
+    elif "qq.com" in host or "163.com" in host or "126.com" in host:
+        advice = (
+            "QQ / 163 邮箱需要在「设置 → 账户」里开启 SMTP 服务，并使用生成的「授权码」，"
+            "而不是邮箱登录密码。端口用 465 并设置 SMTP_SSL=true、SMTP_STARTTLS=false。"
+        )
+    else:
+        advice = "请确认该邮箱已开启 SMTP 服务，且 SMTP_PASSWORD 填的是服务商要求的授权码或专用密码。"
+    return f"SMTP 登录被拒绝（{config.username} @ {config.host}）：{exc}\n\n{advice}"
+
+
+def _close(server: smtplib.SMTP) -> None:
+    try:
+        server.quit()
+    except smtplib.SMTPException:  # pragma: no cover - 关闭连接失败无需中断主流程
+        server.close()
 
 
 class FileMailer(Mailer):

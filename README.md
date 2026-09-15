@@ -52,11 +52,15 @@ PYTHONPATH=src python3 -m applepay_watch run    # 之后每天执行这一条
 
 ### Gmail（默认）
 
-Gmail 不接受账号密码直连，必须用**应用专用密码**：
+Gmail 不接受账号密码直连，必须用**应用专用密码**。而应用专用密码又要求账号**先开启两步验证**，顺序不能反：
 
-1. 打开 [Google 账号 → 安全性](https://myaccount.google.com/security)，开启「两步验证」
-2. 进入 [应用专用密码](https://myaccount.google.com/apppasswords)，创建一个，名字随便填
+1. 先开启[两步验证](https://myaccount.google.com/signinoptions/twosv)，确认状态显示为「已开启」
+   （只绑了手机号但没完成短信确认的"待处理"状态不算，后面照样拿不到密码）
+2. 再进入[应用专用密码](https://myaccount.google.com/apppasswords)，创建一个，名字随便填
 3. 把生成的 16 位密码（去掉空格）填进 `.env` 的 `SMTP_PASSWORD`
+
+> 如果第 2 步提示 **「您的账号不支持您正在尝试的设置」**，说明第 1 步还没真正生效，回去把两步验证开完。
+> 详见下面的[常见问题](#常见问题)。
 
 ```env
 SMTP_HOST=smtp.gmail.com
@@ -80,6 +84,15 @@ SMTP_PASSWORD=授权码
 ```
 
 **没配 SMTP 也能用**：程序会自动降级，把邮件写到 `out/` 目录（`.html` / `.txt` / `.eml` 三种格式），你可以先看效果再决定要不要配。
+
+配完之后先验证一下，不用等到真有新岗位才发现配错了：
+
+```bash
+PYTHONPATH=src python3 -m applepay_watch mailtest          # 只测能不能登录
+PYTHONPATH=src python3 -m applepay_watch mailtest --send   # 再发一封测试邮件
+```
+
+登录失败时程序会直接告诉你该去哪里改，而不是甩一串 SMTP 错误码。
 
 ## 翻译
 
@@ -140,6 +153,7 @@ PYTHONPATH=src python3 -m applepay_watch loop --interval 86400
 | `run --force` | 即使没有新增岗位也发一封（测试用）|
 | `list` | 列出官网当前命中的岗位，加 `--json` 输出结构化数据 |
 | `preview` | 用真实岗位渲染一封邮件预览，加 `--send` 真的发出去 |
+| `mailtest` | 验证发件邮箱能否登录，加 `--send` 发一封测试邮件 |
 | `status` | 查看本地快照、收件人、SMTP 和翻译配置 |
 | `seed` | 把当前岗位记为基线，不发邮件 |
 | `loop` | 常驻进程，按间隔重复检查 |
@@ -153,6 +167,34 @@ APPLE_JOBS_SEARCH_URL=https://jobs.apple.com/zh-cn/search?location=china-CHNC&te
 ```
 
 翻页、地区、产品线这些都会跟着这个 URL 走，代码不用改。
+
+## 常见问题
+
+### 创建应用专用密码时提示「您的账号不支持您正在尝试的设置」
+
+这是 Google 账号侧的限制。**最常见的原因是两步验证没开**——应用专用密码只对已开启两步验证的账号开放，没开的话那个页面就只显示这一句话。
+
+先去[开启两步验证](https://myaccount.google.com/signinoptions/twosv)，确认状态是「已开启」，再回到[应用专用密码](https://myaccount.google.com/apppasswords)页面（也可以在两步验证页面拉到最底部找到入口）。
+
+如果两步验证确实开好了还是这个提示，那就是下面三种情况之一，这些账号**拿不到应用专用密码**，需要换一个发件邮箱：
+
+- 两步验证只绑定了实体安全密钥（没有手机号或验证器 App）
+- 账号加入了 [Google 高级保护计划](https://support.google.com/accounts/answer/7539956?hl=zh-Hans)，该计划明确禁用应用专用密码并会撤销已有的
+- 这是公司 / 学校的 Google Workspace 账号，管理员禁用了应用专用密码
+
+**换发件邮箱不影响收件。** 发件用哪个邮箱都行，`MAIL_TO` 保持你的 Gmail 就好，邮件照样收到同一个收件箱。QQ 邮箱最省事：邮箱设置 → 账户 → 开启 SMTP 服务 → 拿到授权码，然后按上面 [QQ / 163 邮箱](#qq--163-邮箱)那段配置即可。
+
+### 收不到邮件，但程序显示发送成功
+
+先去垃圾邮件里找一下。用 QQ / 163 往 Gmail 发信时，首封容易被归到「垃圾邮件」或「推广」标签，标记一次「非垃圾邮件」之后就正常了。
+
+### 日志里出现「翻译后端 google 失败」
+
+免费的 Google 网页翻译接口对同一个 IP 有频率限制，尤其是在云服务器 / GitHub Actions 上跑的时候。程序会自动降级到下一个后端，最差情况是保留英文原文并在邮件里说明，不会中断监测。想彻底稳定就配一个 `LLM_API_KEY` 或 `DEEPL_API_KEY`。
+
+### 程序报 `ParseError`
+
+说明 Apple 改版了页面结构。这是刻意设计的：解析不出来就报错退出，而不是静默发一封空邮件。`tests/fixtures/` 里存着官网页面快照，跑 `python3 -m pytest` 能定位是哪一层解析失效了。
 
 ## 开发
 

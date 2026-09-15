@@ -11,7 +11,7 @@ from datetime import datetime
 
 from .apple import AppleJobsClient
 from .config import Config
-from .email_render import JobReport, build_email
+from .email_render import EmailContent, JobReport, build_email
 from .mailer import build_mailer
 from .store import JobStore
 from .watcher import run_once
@@ -134,6 +134,51 @@ def _cmd_preview(args: argparse.Namespace, config: Config) -> int:
     return 0
 
 
+def _cmd_mailtest(args: argparse.Namespace, config: Config) -> int:
+    """验证发件配置是否可用——不抓岗位、不动状态，只连 SMTP。"""
+    from .mailer import SMTPMailer
+
+    mail = config.mail
+    missing = [
+        name
+        for name, value in (
+            ("SMTP_HOST", mail.host),
+            ("SMTP_USERNAME", mail.username),
+            ("SMTP_PASSWORD", mail.password),
+            ("MAIL_TO", ", ".join(mail.recipients)),
+        )
+        if not value
+    ]
+    if missing:
+        print(f"发件配置不完整，缺少：{'、'.join(missing)}")
+        print("请复制 .env.example 为 .env 并填写，详见 README 的「配置发信邮箱」一节。")
+        return 1
+
+    print(f"发件服务器：{mail.host}:{mail.port}（{'SSL' if mail.use_ssl else 'STARTTLS'}）")
+    print(f"发件人：{mail.from_address}")
+    print(f"收件人：{', '.join(mail.recipients)}")
+    print("正在登录……")
+    mailer = SMTPMailer(mail)
+    print(mailer.verify())
+
+    if args.send:
+        content = EmailContent(
+            subject=f"{mail.subject_prefix} 配置测试成功",
+            html_body=(
+                '<div style="font-family:-apple-system,\'PingFang SC\',sans-serif;'
+                'font-size:15px;line-height:1.7;color:#1d1d1f;">'
+                "<p>收到这封邮件说明发信配置已经跑通。</p>"
+                "<p>之后一旦 Apple Pay 产品线出现新岗位，你就会在这个邮箱收到"
+                "带岗位链接和中文职责、要求的通知邮件。</p></div>"
+            ),
+            text_body="收到这封邮件说明发信配置已经跑通。之后出现新岗位就会收到中文岗位通知。",
+        )
+        print(mailer.send(content))
+    else:
+        print("加 --send 可以再发一封测试邮件，确认收件箱能收到。")
+    return 0
+
+
 def _cmd_seed(args: argparse.Namespace, config: Config) -> int:
     client = AppleJobsClient(config.search_url, locale=config.locale)
     jobs = client.search()
@@ -171,6 +216,10 @@ def build_parser() -> argparse.ArgumentParser:
     preview.add_argument("--limit", type=int, default=2, help="取最新的几个岗位，默认 2")
     preview.add_argument("--send", action="store_true", help="真的发出这封预览邮件")
     preview.set_defaults(func=_cmd_preview)
+
+    mailtest = sub.add_parser("mailtest", help="验证发件邮箱配置是否可用")
+    mailtest.add_argument("--send", action="store_true", help="登录成功后再发一封测试邮件")
+    mailtest.set_defaults(func=_cmd_mailtest)
 
     seed = sub.add_parser("seed", help="把当前岗位记为基线（不发邮件）")
     seed.set_defaults(func=_cmd_seed)

@@ -1,6 +1,17 @@
+import smtplib
+
+import pytest
+
 from applepay_watch.config import MailConfig
 from applepay_watch.email_render import EmailContent
-from applepay_watch.mailer import FileMailer, SMTPMailer, build_mailer, build_message
+from applepay_watch.mailer import (
+    AuthError,
+    FileMailer,
+    SMTPMailer,
+    auth_hint,
+    build_mailer,
+    build_message,
+)
 
 CONTENT = EmailContent(
     subject="[Apple Pay 招聘监测] 新增 1 个岗位 · SDET - Apple Pay 质量工程师",
@@ -99,6 +110,46 @@ def test_ssl_flow_skips_starttls(monkeypatch):
     server = FakeSMTP.instances[0]
     assert (server.host, server.port) == ("smtp.qq.com", 465)
     assert "starttls" not in server.calls
+
+
+def test_verify_logs_in_without_sending(monkeypatch):
+    FakeSMTP.instances.clear()
+    monkeypatch.setattr("smtplib.SMTP", FakeSMTP)
+    config = MailConfig(username="me@gmail.com", password="pw")
+
+    message = SMTPMailer(config).verify()
+
+    assert "登录成功" in message
+    assert FakeSMTP.instances[0].sent == []
+    assert FakeSMTP.instances[0].calls[-1] == "quit"
+
+
+def test_gmail_auth_failure_explains_app_password_and_2fa(monkeypatch):
+    class RejectingSMTP(FakeSMTP):
+        def login(self, username, password):
+            raise smtplib.SMTPAuthenticationError(535, b"Username and Password not accepted")
+
+    FakeSMTP.instances.clear()
+    monkeypatch.setattr("smtplib.SMTP", RejectingSMTP)
+    config = MailConfig(username="me@gmail.com", password="wrong")
+
+    with pytest.raises(AuthError) as excinfo:
+        SMTPMailer(config).send(CONTENT)
+
+    hint = str(excinfo.value)
+    assert "应用专用密码" in hint
+    assert "两步验证" in hint
+    assert "myaccount.google.com/apppasswords" in hint
+    # 连接必须被关掉，不能因为认证失败就泄漏 socket
+    assert FakeSMTP.instances[0].calls[-1] == "quit"
+
+
+def test_qq_auth_failure_mentions_authorization_code():
+    config = MailConfig(host="smtp.qq.com", port=465, username="me@qq.com", use_ssl=True)
+    hint = auth_hint(config, RuntimeError("535 login fail"))
+
+    assert "授权码" in hint
+    assert "应用专用密码" not in hint
 
 
 def test_connection_is_closed_even_when_sending_fails(monkeypatch):
