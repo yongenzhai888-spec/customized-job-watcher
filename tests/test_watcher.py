@@ -150,6 +150,31 @@ def test_state_is_not_advanced_when_sending_fails(config, wiring, monkeypatch):
     assert [j.job_id for j in watcher.run_once(config).new_jobs] == ["b"]
 
 
+def test_require_mail_fails_before_scraping_when_unconfigured(config, wiring):
+    """定时任务里发信没配好应当直接失败，而不是悄悄写个文件了事。"""
+    from applepay_watch.mailer import ConfigError
+
+    client = wiring["install"]([job("a")])
+    config.mail.recipients = []
+
+    with pytest.raises(ConfigError) as excinfo:
+        watcher.run_once(config, require_mail=True)
+
+    assert "MAIL_TO" in str(excinfo.value)
+    # 校验发生在抓取之前，不该浪费一次请求
+    assert client.detail_calls == []
+    assert not config.state_file.exists()
+
+
+def test_require_mail_is_ignored_in_dry_run(config, wiring):
+    wiring["install"]([job("a")])
+    config.mail.recipients = []
+
+    result = watcher.run_once(config, dry_run=True, require_mail=True)
+
+    assert result.is_first_run is True
+
+
 def test_force_notifies_all_current_jobs(config, wiring):
     wiring["install"]([job("a"), job("b")])
     watcher.run_once(config)

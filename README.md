@@ -129,6 +129,8 @@ LLM_MODEL=deepseek-chat
 3. **Variables** 里加 `MAIL_TO`（以及可选的 `SMTP_HOST`、`LLM_BASE_URL`、`LLM_MODEL` 等）
 4. 在 Actions 页面手动跑一次 `workflow_dispatch` 验证；勾上 `force` 可以强制发一封测试邮件
 
+`MAIL_TO` 填在 Secrets 里也能跑（workflow 两边都会读），不用纠结放哪。但**必须填**——workflow 用的是 `run --require-mail`，配置不全会直接让这次运行失败并在日志里说明缺什么，而不是悄悄把邮件写成文件让你以为一切正常。
+
 岗位快照 `state/seen_jobs.json` 会由 workflow 自动提交回仓库，作为下次比对的依据。
 
 ### 方式二：本机 crontab（macOS / Linux）
@@ -153,6 +155,7 @@ PYTHONPATH=src python3 -m applepay_watch loop --interval 86400
 | `run` | 执行一次监测，有新岗位就发邮件（定时任务调用的就是它）|
 | `run --dry-run` | 不发邮件，只把邮件写到 `out/` |
 | `run --force` | 即使没有新增岗位也发一封（测试用）|
+| `run --require-mail` | 发信没配好就直接报错退出，而不是降级成本地预览（定时任务用）|
 | `list` | 列出官网当前命中的岗位，加 `--json` 输出结构化数据 |
 | `preview` | 用真实岗位渲染一封邮件预览，加 `--send` 真的发出去 |
 | `mailtest` | 验证发件邮箱能否登录，加 `--send` 发一封测试邮件 |

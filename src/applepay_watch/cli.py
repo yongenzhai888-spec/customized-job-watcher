@@ -28,7 +28,12 @@ def _setup_logging(verbose: bool) -> None:
 
 
 def _cmd_run(args: argparse.Namespace, config: Config) -> int:
-    result = run_once(config, dry_run=args.dry_run, force_notify=args.force)
+    result = run_once(
+        config,
+        dry_run=args.dry_run,
+        force_notify=args.force,
+        require_mail=args.require_mail,
+    )
     print(result.exit_summary)
     marker = "·" if result.baseline_only else "+"
     for job in result.new_jobs:
@@ -198,6 +203,11 @@ def build_parser() -> argparse.ArgumentParser:
     run = sub.add_parser("run", help="执行一次监测（每日定时任务调用的就是它）")
     run.add_argument("--dry-run", action="store_true", help="不发邮件，只把邮件写到 out/ 目录")
     run.add_argument("--force", action="store_true", help="即使没有新增岗位也把当前岗位发一遍")
+    run.add_argument(
+        "--require-mail",
+        action="store_true",
+        help="发信未配置时直接报错退出，而不是降级成本地预览（定时任务建议开启）",
+    )
     run.set_defaults(func=_cmd_run)
 
     loop = sub.add_parser("loop", help="常驻进程，按固定间隔重复检查")

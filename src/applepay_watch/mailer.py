@@ -130,9 +130,43 @@ class FileMailer(Mailer):
         return f"未发送邮件（dry-run），预览已写入 {html_path}"
 
 
-def build_mailer(config: MailConfig, output_dir: Path, *, dry_run: bool) -> Mailer:
+class ConfigError(RuntimeError):
+    """发信配置不完整，且调用方要求必须真的把邮件发出去。"""
+
+
+def missing_mail_settings(config: MailConfig) -> list[str]:
+    return [
+        name
+        for name, value in (
+            ("MAIL_TO", config.recipients),
+            ("SMTP_HOST", config.host),
+            ("SMTP_USERNAME", config.username),
+            ("SMTP_PASSWORD", config.password),
+        )
+        if not value
+    ]
+
+
+def ensure_mail_configured(config: MailConfig) -> None:
+    """配置不全就抛错。用在"必须真的发出去"的场景（比如定时任务）。"""
+    missing = missing_mail_settings(config)
+    if not missing:
+        return
+    raise ConfigError(
+        f"发信配置不完整，缺少：{'、'.join(missing)}。\n"
+        "在 GitHub Actions 上请到 Settings → Secrets and variables → Actions 配置："
+        "SMTP_USERNAME / SMTP_PASSWORD 放 Secrets，MAIL_TO 放 Variables。\n"
+        "在本机运行请把它们写进项目根目录的 .env（可从 .env.example 复制）。"
+    )
+
+
+def build_mailer(
+    config: MailConfig, output_dir: Path, *, dry_run: bool, require_mail: bool = False
+) -> Mailer:
     if dry_run:
         return FileMailer(output_dir, config)
+    if require_mail:
+        ensure_mail_configured(config)
     if not config.configured:
         log.warning(
             "发信配置不完整（需要 MAIL_TO / SMTP_USERNAME / SMTP_PASSWORD），本次改为写入本地预览文件"

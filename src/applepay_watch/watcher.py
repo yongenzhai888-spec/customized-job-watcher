@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from .apple import AppleJobsClient, JobSummary
 from .config import Config
 from .email_render import JobReport, build_email
-from .mailer import build_mailer
+from .mailer import build_mailer, ensure_mail_configured
 from .store import JobStore
 from .translate import build_translator, looks_chinese, translate_job
 
@@ -35,7 +35,17 @@ class RunResult:
         )
 
 
-def run_once(config: Config, *, dry_run: bool = False, force_notify: bool = False) -> RunResult:
+def run_once(
+    config: Config,
+    *,
+    dry_run: bool = False,
+    force_notify: bool = False,
+    require_mail: bool = False,
+) -> RunResult:
+    # 先校验发信配置，别等抓完岗位、翻译完了才发现发不出去。
+    if require_mail and not dry_run:
+        ensure_mail_configured(config.mail)
+
     client = AppleJobsClient(
         config.search_url,
         locale=config.locale,
@@ -84,7 +94,9 @@ def run_once(config: Config, *, dry_run: bool = False, force_notify: bool = Fals
         translated=translated,
         engine=engine,
     )
-    mailer = build_mailer(config.mail, config.output_dir, dry_run=dry_run)
+    mailer = build_mailer(
+        config.mail, config.output_dir, dry_run=dry_run, require_mail=require_mail
+    )
     result.message = mailer.send(content)
     result.email_sent = not dry_run and config.mail.configured
     log.info(result.message)

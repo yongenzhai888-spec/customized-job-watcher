@@ -31,19 +31,25 @@ jobs:
 
       - name: 执行监测
         env:
+          # MAIL_TO 之类的配置放 Variables 更合适，但填成 Secret 也一样能跑——
+          # 两边都读一次，省得因为填错位置导致收不到邮件却看不出原因。
           APPLE_JOBS_SEARCH_URL: ${{ vars.APPLE_JOBS_SEARCH_URL }}
-          MAIL_TO: ${{ vars.MAIL_TO }}
-          SMTP_HOST: ${{ vars.SMTP_HOST }}
-          SMTP_PORT: ${{ vars.SMTP_PORT }}
-          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          MAIL_TO: ${{ vars.MAIL_TO || secrets.MAIL_TO }}
+          SMTP_HOST: ${{ vars.SMTP_HOST || secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME || vars.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-          MAIL_FROM: ${{ vars.MAIL_FROM }}
+          MAIL_FROM: ${{ vars.MAIL_FROM || secrets.MAIL_FROM }}
           TRANSLATOR: ${{ vars.TRANSLATOR }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
           DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
-        run: PYTHONPATH=src python -m applepay_watch run ${{ inputs.force && '--force' || '' }}
+        # --require-mail：发信没配好就直接让这次运行失败，
+        # 而不是悄悄把邮件写成文件、让人误以为一切正常。
+        run: >-
+          PYTHONPATH=src python -m applepay_watch run --require-mail
+          ${{ inputs.force && '--force' || '' }}
 
       - name: 保存岗位快照
         run: |
