@@ -182,9 +182,9 @@ def _render_html(
     notice = (
         ""
         if translated
-        else f'<p style="margin:0 0 18px;padding:12px 14px;background:#fff4e5;border-radius:10px;'
-        f'font-size:13px;line-height:1.6;color:#8a5a00;">未检测到可用的翻译服务，本邮件保留了 '
-        f"Apple 官网英文原文。配置 LLM_API_KEY 或 DEEPL_API_KEY 后即可自动翻译成中文。</p>"
+        else '<p style="margin:0 0 18px;padding:12px 14px;background:#fff4e5;border-radius:10px;'
+        'font-size:13px;line-height:1.6;color:#8a5a00;">未检测到可用的翻译服务，本邮件保留了 '
+        "Apple 官网英文原文。配置 LLM_API_KEY 或 DEEPL_API_KEY 后即可自动翻译成中文。</p>"
     )
     engine_note = f"翻译引擎：{engine}。" if translated and engine else ""
 

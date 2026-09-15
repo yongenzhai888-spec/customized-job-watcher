@@ -92,7 +92,7 @@ class Config:
     translation: TranslationConfig = field(default_factory=TranslationConfig)
 
     @classmethod
-    def from_env(cls) -> "Config":
+    def from_env(cls) -> Config:
         load_dotenv()
         recipients = [
             addr.strip()

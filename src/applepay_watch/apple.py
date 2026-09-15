@@ -68,7 +68,7 @@ class JobSummary:
     posted_display: str = ""
 
     @classmethod
-    def from_payload(cls, raw: dict) -> "JobSummary":
+    def from_payload(cls, raw: dict) -> JobSummary:
         job_id = str(raw.get("id") or raw.get("reqId") or "").strip()
         if not job_id:
             raise ParseError("搜索结果里存在没有 id 的岗位")

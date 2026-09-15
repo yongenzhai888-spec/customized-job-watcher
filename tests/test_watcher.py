@@ -157,5 +157,6 @@ def test_force_notifies_all_current_jobs(config, wiring):
 
     result = watcher.run_once(config, force_notify=True)
 
+    assert result.new_jobs == []
     assert len(wiring["mailer"].sent) == 1
     assert "新增 2 个岗位" in wiring["mailer"].sent[0].subject

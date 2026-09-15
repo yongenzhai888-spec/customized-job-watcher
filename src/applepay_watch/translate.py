@@ -88,10 +88,7 @@ class LLMTranslator(Translator):
                 {"role": "system", "content": self.SYSTEM_PROMPT},
                 {
                     "role": "user",
-                    "content": "目标语言：{lang}\n{data}".format(
-                        lang=self.target_language,
-                        data=json.dumps(chunk, ensure_ascii=False),
-                    ),
+                    "content": f"目标语言：{self.target_language}\n{json.dumps(chunk, ensure_ascii=False)}",
                 },
             ],
         }
@@ -283,7 +280,7 @@ class CachingTranslator(Translator):
                 pending = still_pending
                 continue
 
-            for idx, text in zip(pending, translated):
+            for idx, text in zip(pending, translated, strict=True):
                 value = text.strip() or texts[idx]
                 results[idx] = value
                 self._cache[self._key(backend.name, texts[idx])] = value
@@ -368,7 +365,7 @@ def translate_job(detail: JobDetail, translator: Translator) -> dict[str, str]:
     translated_lines = translator.translate_batch(lines)
 
     grouped: dict[str, list[str]] = {name: [] for name in fields}
-    for (field_name, _), text in zip(line_index, translated_lines):
+    for (field_name, _), text in zip(line_index, translated_lines, strict=True):
         grouped[field_name].append(text)
     return {name: "\n".join(values).strip() for name, values in grouped.items()}
 
