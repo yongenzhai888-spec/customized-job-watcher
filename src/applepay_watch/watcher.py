@@ -21,11 +21,14 @@ class RunResult:
     new_jobs: list[JobSummary] = field(default_factory=list)
     removed_ids: list[str] = field(default_factory=list)
     is_first_run: bool = False
+    baseline_only: bool = False
     email_sent: bool = False
     message: str = ""
 
     @property
     def exit_summary(self) -> str:
+        if self.baseline_only:
+            return f"官网当前 {self.total_jobs} 个岗位。{self.message}"
         return (
             f"官网当前 {self.total_jobs} 个岗位；"
             f"新增 {len(self.new_jobs)} 个，下架 {len(self.removed_ids)} 个。{self.message}"
@@ -53,6 +56,7 @@ def run_once(config: Config, *, dry_run: bool = False, force_notify: bool = Fals
 
     if diff.is_first_run and not (config.notify_on_first_run or force_notify):
         store.commit(jobs)
+        result.baseline_only = True
         result.message = (
             f"首次运行：已把当前 {len(jobs)} 个岗位记录为基线，不发送邮件；"
             "从下次开始只要出现新岗位就会收到邮件。"

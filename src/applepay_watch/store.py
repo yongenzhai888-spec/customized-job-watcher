@@ -52,6 +52,14 @@ class JobStore:
     def known_ids(self) -> set[str]:
         return set(self._data["jobs"])
 
+    @property
+    def last_run(self) -> str | None:
+        return self._data["last_run"]
+
+    @property
+    def snapshot(self) -> dict[str, dict]:
+        return dict(self._data["jobs"])
+
     def diff(self, jobs: list[JobSummary]) -> DiffResult:
         known = self.known_ids
         current = {job.job_id for job in jobs}

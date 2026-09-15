@@ -43,9 +43,7 @@ jobs:
           LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
           DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
-        run: |
-          PYTHONPATH=src python -m applepay_watch run \
-            ${{ inputs.force && '--force' || '' }}
+        run: PYTHONPATH=src python -m applepay_watch run ${{ inputs.force && '--force' || '' }}
 
       - name: 保存岗位快照
         run: |

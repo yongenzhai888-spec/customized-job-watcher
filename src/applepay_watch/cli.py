@@ -30,8 +30,9 @@ def _setup_logging(verbose: bool) -> None:
 def _cmd_run(args: argparse.Namespace, config: Config) -> int:
     result = run_once(config, dry_run=args.dry_run, force_notify=args.force)
     print(result.exit_summary)
+    marker = "·" if result.baseline_only else "+"
     for job in result.new_jobs:
-        print(f"  + {job.title}（{'、'.join(job.locations) or '地点未标注'}）")
+        print(f"  {marker} {job.title}（{'、'.join(job.locations) or '地点未标注'}）")
     for job_id in result.removed_ids:
         print(f"  - 已下架：{job_id}")
     return 0
@@ -88,11 +89,11 @@ def _cmd_list(args: argparse.Namespace, config: Config) -> int:
 
 def _cmd_status(args: argparse.Namespace, config: Config) -> int:
     store = JobStore(config.state_file)
-    data = store._data  # noqa: SLF001 - 只读展示
+    jobs = store.snapshot
     print(f"状态文件：{config.state_file}")
-    print(f"上次运行：{data['last_run'] or '从未运行'}")
-    print(f"已记录岗位：{len(data['jobs'])} 个")
-    for job_id, meta in sorted(data["jobs"].items(), key=lambda kv: kv[1].get("first_seen", "")):
+    print(f"上次运行：{store.last_run or '从未运行'}")
+    print(f"已记录岗位：{len(jobs)} 个")
+    for job_id, meta in sorted(jobs.items(), key=lambda kv: kv[1].get("first_seen", "")):
         print(f"  · {meta.get('title', job_id)}　首次发现：{meta.get('first_seen', '?')}")
     print(f"\n收件人：{', '.join(config.mail.recipients)}")
     print(f"SMTP：{'已配置 ' + config.mail.host if config.mail.configured else '未配置（将写本地预览）'}")
