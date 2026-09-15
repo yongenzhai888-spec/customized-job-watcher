@@ -48,7 +48,7 @@ def config(tmp_path):
     return Config(
         state_file=tmp_path / "state.json",
         output_dir=tmp_path / "out",
-        mail=MailConfig(username="a@b.com", password="pw", recipients=["yuhanhe0614@gmail.com"]),
+        mail=MailConfig(username="a@b.com", password="pw", recipients=["someone@example.com"]),
         translation=TranslationConfig(engine="none", cache_file=tmp_path / "cache.json"),
     )
 

@@ -134,7 +134,9 @@ def build_mailer(config: MailConfig, output_dir: Path, *, dry_run: bool) -> Mail
     if dry_run:
         return FileMailer(output_dir, config)
     if not config.configured:
-        log.warning("SMTP 未配置完整（需要 SMTP_USERNAME / SMTP_PASSWORD），本次改为写入本地预览文件")
+        log.warning(
+            "发信配置不完整（需要 MAIL_TO / SMTP_USERNAME / SMTP_PASSWORD），本次改为写入本地预览文件"
+        )
         return FileMailer(output_dir, config)
     return SMTPMailer(config)
 

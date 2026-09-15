@@ -11,7 +11,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SEARCH_URL = (
     "https://jobs.apple.com/zh-cn/search?location=china-CHNC&product=apple-pay-APPAY"
 )
-DEFAULT_MAIL_TO = "yuhanhe0614@gmail.com"
+# 收件人只从 MAIL_TO 读取，不写死在代码里：仓库可能是公开的，
+# 邮箱地址进了源码就会被爬虫抓去发垃圾邮件。
 
 
 def load_dotenv(path: Path | None = None) -> None:
@@ -53,7 +54,7 @@ class MailConfig:
     username: str = ""
     password: str = ""
     sender: str = ""
-    recipients: list[str] = field(default_factory=lambda: [DEFAULT_MAIL_TO])
+    recipients: list[str] = field(default_factory=list)
     use_ssl: bool = False
     use_starttls: bool = True
     subject_prefix: str = "[Apple Pay 招聘监测]"
@@ -95,9 +96,7 @@ class Config:
     def from_env(cls) -> Config:
         load_dotenv()
         recipients = [
-            addr.strip()
-            for addr in (_env("MAIL_TO", DEFAULT_MAIL_TO)).replace(";", ",").split(",")
-            if addr.strip()
+            addr.strip() for addr in _env("MAIL_TO").replace(";", ",").split(",") if addr.strip()
         ]
         mail = MailConfig(
             host=_env("SMTP_HOST", "smtp.gmail.com"),
@@ -105,7 +104,7 @@ class Config:
             username=_env("SMTP_USERNAME"),
             password=_env("SMTP_PASSWORD"),
             sender=_env("MAIL_FROM"),
-            recipients=recipients or [DEFAULT_MAIL_TO],
+            recipients=recipients,
             use_ssl=_env_bool("SMTP_SSL", False),
             use_starttls=_env_bool("SMTP_STARTTLS", True),
             subject_prefix=_env("MAIL_SUBJECT_PREFIX", "[Apple Pay 招聘监测]"),

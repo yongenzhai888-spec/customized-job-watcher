@@ -170,7 +170,12 @@ def test_connection_is_closed_even_when_sending_fails(monkeypatch):
 
 
 def test_dry_run_and_missing_credentials_both_use_file_mailer(tmp_path):
-    configured = MailConfig(username="me@gmail.com", password="pw")
+    configured = MailConfig(username="me@example.com", password="pw", recipients=["you@example.com"])
     assert isinstance(build_mailer(configured, tmp_path, dry_run=True), FileMailer)
     assert isinstance(build_mailer(configured, tmp_path, dry_run=False), SMTPMailer)
     assert isinstance(build_mailer(MailConfig(), tmp_path, dry_run=False), FileMailer)
+
+
+def test_missing_recipient_also_falls_back_to_file_mailer(tmp_path):
+    no_recipient = MailConfig(username="me@example.com", password="pw")
+    assert isinstance(build_mailer(no_recipient, tmp_path, dry_run=False), FileMailer)

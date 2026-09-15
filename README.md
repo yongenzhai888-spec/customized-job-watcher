@@ -67,8 +67,10 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USERNAME=你的Gmail地址@gmail.com
 SMTP_PASSWORD=abcdefghijklmnop
-MAIL_TO=yuhanhe0614@gmail.com
+MAIL_TO=你的邮箱@gmail.com
 ```
+
+> `MAIL_TO` 必填，代码里没有内置默认收件人——本仓库是公开的，邮箱地址写进源码会被爬虫抓去发垃圾邮件。
 
 ### QQ / 163 邮箱
 

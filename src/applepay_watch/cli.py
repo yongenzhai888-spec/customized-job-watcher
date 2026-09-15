@@ -95,7 +95,7 @@ def _cmd_status(args: argparse.Namespace, config: Config) -> int:
     print(f"已记录岗位：{len(jobs)} 个")
     for job_id, meta in sorted(jobs.items(), key=lambda kv: kv[1].get("first_seen", "")):
         print(f"  · {meta.get('title', job_id)}　首次发现：{meta.get('first_seen', '?')}")
-    print(f"\n收件人：{', '.join(config.mail.recipients)}")
+    print(f"\n收件人：{', '.join(config.mail.recipients) or '未设置（请填 MAIL_TO）'}")
     print(f"SMTP：{'已配置 ' + config.mail.host if config.mail.configured else '未配置（将写本地预览）'}")
     print(f"翻译引擎：{config.translation.engine}")
     return 0
