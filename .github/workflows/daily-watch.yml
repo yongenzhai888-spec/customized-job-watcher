@@ -1,0 +1,69 @@
+name: Apple Pay 岗位每日监测
+
+on:
+  schedule:
+    # UTC 01:00 = 北京时间每天早上 09:00
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "即使没有新岗位也发一封邮件（用于测试）"
+        type: boolean
+        default: false
+
+concurrency:
+  group: applepay-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    permissions:
+      # 需要写权限，把最新的岗位快照 state/seen_jobs.json 提交回仓库，
+      # 这样下一次运行才知道哪些岗位是"已经通知过的"。
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 执行监测
+        env:
+          APPLE_JOBS_SEARCH_URL: ${{ vars.APPLE_JOBS_SEARCH_URL }}
+          MAIL_TO: ${{ vars.MAIL_TO }}
+          SMTP_HOST: ${{ vars.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_FROM: ${{ vars.MAIL_FROM }}
+          TRANSLATOR: ${{ vars.TRANSLATOR }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+        run: |
+          PYTHONPATH=src python -m applepay_watch run \
+            ${{ inputs.force && '--force' || '' }}
+
+      - name: 保存岗位快照
+        run: |
+          if [[ -n "$(git status --porcelain state/)" ]]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add state/
+            git commit -m "chore: 更新 Apple Pay 岗位快照 ($(date -u +%Y-%m-%d))"
+            git push
+          else
+            echo "岗位没有变化，无需提交"
+          fi
+
+      - name: 上传邮件预览（仅在未配置 SMTP 时产生）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: email-preview
+          path: out/
+          if-no-files-found: ignore
+          retention-days: 14
