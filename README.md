@@ -131,7 +131,7 @@ LLM_MODEL=deepseek-chat
 
 `MAIL_TO` 填在 Secrets 里也能跑（workflow 两边都会读），不用纠结放哪。但**必须填**——workflow 用的是 `run --require-mail`，配置不全会直接让这次运行失败并在日志里说明缺什么，而不是悄悄把邮件写成文件让你以为一切正常。
 
-岗位快照 `state/seen_jobs.json` 会由 workflow 自动提交回仓库，作为下次比对的依据。
+岗位快照 `state/seen_jobs.json` 会由 workflow 自动提交回仓库，作为下次比对的依据。这个文件每天都会更新（哪怕岗位没变，`last_run` 时间戳也会变），所以仓库每天都有一次提交——这是刻意的：**GitHub 会在公开仓库连续 60 天没有活动后自动停用定时 workflow**，每日提交正好让它一直保持活跃。
 
 ### 方式二：本机 crontab（macOS / Linux）
 
