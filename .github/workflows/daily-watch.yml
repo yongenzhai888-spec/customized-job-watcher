@@ -1,4 +1,4 @@
-name: Apple Pay 岗位每日监测
+name: 岗位每日监测
 
 on:
   schedule:
@@ -10,16 +10,22 @@ on:
         description: "即使没有新岗位也发一封邮件（用于测试）"
         type: boolean
         default: false
+      source:
+        description: "只跑某一个来源（填 watchlist 里的 id，留空跑全部）"
+        type: string
+        default: ""
 
 concurrency:
-  group: applepay-watch
+  group: job-watch
   cancel-in-progress: false
 
 jobs:
   watch:
     runs-on: ubuntu-latest
+    # 字节那个来源有近两千个岗位要翻页，且站点会限流触发重试
+    timeout-minutes: 30
     permissions:
-      # 需要写权限，把最新的岗位快照 state/seen_jobs.json 提交回仓库，
+      # 需要写权限，把最新的岗位快照 state/*.json 提交回仓库，
       # 这样下一次运行才知道哪些岗位是"已经通知过的"。
       contents: write
     steps:
@@ -31,10 +37,10 @@ jobs:
 
       - name: 执行监测
         env:
-          # MAIL_TO 之类的配置放 Variables 更合适，但填成 Secret 也一样能跑——
+          # 收件人之类的配置放 Variables 更合适，但填成 Secret 也一样能跑——
           # 两边都读一次，省得因为填错位置导致收不到邮件却看不出原因。
-          APPLE_JOBS_SEARCH_URL: ${{ vars.APPLE_JOBS_SEARCH_URL }}
           MAIL_TO: ${{ vars.MAIL_TO || secrets.MAIL_TO }}
+          MAIL_TO_CN: ${{ vars.MAIL_TO_CN || secrets.MAIL_TO_CN }}
           SMTP_HOST: ${{ vars.SMTP_HOST || secrets.SMTP_HOST }}
           SMTP_PORT: ${{ vars.SMTP_PORT || secrets.SMTP_PORT }}
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME || vars.SMTP_USERNAME }}
@@ -48,16 +54,19 @@ jobs:
         # --require-mail：发信没配好就直接让这次运行失败，
         # 而不是悄悄把邮件写成文件、让人误以为一切正常。
         run: >-
-          PYTHONPATH=src python -m applepay_watch run --require-mail
+          PYTHONPATH=src python -m jobwatch run --require-mail
           ${{ inputs.force && '--force' || '' }}
+          ${{ inputs.source && format('--source {0}', inputs.source) || '' }}
 
       - name: 保存岗位快照
+        # 即使某个来源抓取失败，也要把成功来源的快照存下来
+        if: always()
         run: |
           if [[ -n "$(git status --porcelain state/)" ]]; then
             git config user.name  "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add state/
-            git commit -m "chore: 更新 Apple Pay 岗位快照 ($(date -u +%Y-%m-%d))"
+            git commit -m "chore: 更新岗位快照 ($(date -u +%Y-%m-%d))"
             git push
           else
             echo "岗位没有变化，无需提交"

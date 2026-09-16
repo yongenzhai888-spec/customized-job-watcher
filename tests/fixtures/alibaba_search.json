@@ -1,0 +1,131 @@
+{
+ "success": true,
+ "errorMsg": null,
+ "content": {
+  "datas": [
+   {
+    "trackId": "SSP1789547218597BzPOuDgvst2873",
+    "positionUrl": "/off-campus/position-detail?positionId=100025775016&track_id=SSP1789547218597BzPOuDgvst2873",
+    "bucket": "DEFAULT",
+    "id": 100025775016,
+    "name": "阿里国际-产品经理（物流业财）-杭州",
+    "status": null,
+    "level": "P7",
+    "categories": [
+     "产品类-平台型"
+    ],
+    "publishTime": 1789372046000,
+    "graduationTime": null,
+    "modifyTime": 1789372046000,
+    "workLocations": [
+     "杭州"
+    ],
+    "interviewLocations": null,
+    "regionEnNameMap": {},
+    "technologyNameIdMap": {},
+    "tags": null,
+    "requirement": "职位要求\n1、本科及以上学历，计算机、信息管理、财务、会计、经济学或相关专业，具有3年以上产品经理工作经验。\n2、熟悉业财一体化、财务核算、结算付款、成本管理或财务月结等业务，具备相关产品设计经验。\n3、具备较强的业务理解、需求分析及产品抽象能力，能够将复杂业务规则转化为标准化产品方案。\n4、对AI产品及相关技术应用有一定理解，能够识别AI在财务流程自动化和智能分析中的应用机会。\n5、具备良好的项目管理、数据分析、沟通协调及跨团队推动能力。\n6、具有电商、物流、供应链财务或智能财务产品经验者优先。",
+    "description": "职位描述\n1、负责物流业财领域的产品规划、需求分析及方案设计，支撑跨境物流核心业务场景，满足财务核算、管理报表及合规管控要求。\n2、深入业务与财务流程，建设成本分摊、费用归集等产品能力，推动业财数据标准化，提升核算效率与准确性。\n3、结合AI技术推动结算付款流程智能化升级，优化制单、收票、审批及支付等环节，显著降低人工投入。\n4、推动财务月结由人工操作向智能化、自动化转型，建设日常监控、异常识别及智能分析能力。\n5、协同业务、财务、技术及数据团队，推动产品方案落地，并通过数据分析持续优化产品体验与业务价值。\n",
+    "experience": {
+     "from": 5,
+     "to": null
+    },
+    "degree": "bachelor",
+    "department": "AE&天淘物流",
+    "project": null,
+    "positionType": null,
+    "code": "GP100025775016",
+    "categoryName": null,
+    "categoryType": null,
+    "batchName": null,
+    "batchId": null,
+    "batchWillingCount": null,
+    "channels": null,
+    "operations": []
+   },
+   {
+    "trackId": "SSP1789547218597rxnPPlESGi7371",
+    "positionUrl": "/off-campus/position-detail?positionId=100022935031&track_id=SSP1789547218597rxnPPlESGi7371",
+    "bucket": "DEFAULT",
+    "id": 100022935031,
+    "name": "全球速卖通事业部(AliExpress)-经营计划分析专家-杭州",
+    "status": null,
+    "level": "P7",
+    "categories": [
+     "数据类-商业数据分析"
+    ],
+    "publishTime": 1789115993000,
+    "graduationTime": null,
+    "modifyTime": 1789115993000,
+    "workLocations": [
+     "杭州"
+    ],
+    "interviewLocations": null,
+    "regionEnNameMap": {},
+    "technologyNameIdMap": {},
+    "tags": null,
+    "requirement": "1. 5年以上工作经验，有零售生意计划经验，对电商和新零售有一定了解；\n\n2. 公司级计划管理经验，有较强的零售数据分析和管理经验；\n\n3. 良好的沟通能力和技巧。\n\n4. 有AI项目经验者优先",
+    "description": "1. 负责梳理AE国家站整体经营目标和经营节奏，通过内外部的深度分析和挖掘，与公司核心部门一起制定合理并可落地的生意计划及运营方案；\n\n2. 国家站经营分析，深度分析外部竞争环境、市场增长趋势，竞争对手特点及趋势，以及站内的经营情况，对业务整体的增长趋势做合理化测算及判断，协助管理层制定战略规划；\n\n3. 梳理内部的实际经营数据，围绕国家经营目标和财务目标，通过不同维度和职能角色来进行目标数据的解读和拆解，在核心职能部门层面，用数据来统一大家的目标并且用不同逻辑来设定各核心部门的业务环节数据；\n\n4. 基于经营目标和各职能部门的经营计划，制定定期追踪及回顾的流程及方案及数据看板；\n\n5. 建立完整的业务数据预测模型及流程，并且按照月、周、天的维度进行滚动预测，不断优化整体预测的准确性及相关结果，提前预判风险；\n\n6. 和财务一起，深入分析及挖掘损益改善方案。不断完善业务整体的OTB模型。建立比较完整的生意损益模型。",
+    "experience": {
+     "from": 5,
+     "to": null
+    },
+    "degree": "bachelor",
+    "department": "阿里集团",
+    "project": null,
+    "positionType": null,
+    "code": "GP100022935031",
+    "categoryName": null,
+    "categoryType": null,
+    "batchName": null,
+    "batchId": null,
+    "batchWillingCount": null,
+    "channels": null,
+    "operations": []
+   },
+   {
+    "trackId": "SSP1789547218597RkOXFvzlDJ9138",
+    "positionUrl": "/off-campus/position-detail?positionId=100025675003&track_id=SSP1789547218597RkOXFvzlDJ9138",
+    "bucket": "DEFAULT",
+    "id": 100025675003,
+    "name": "阿里国际-质量管理数据分析-杭州",
+    "status": null,
+    "level": "P5",
+    "categories": [
+     "数据类-商业数据分析"
+    ],
+    "publishTime": 1788857767000,
+    "graduationTime": null,
+    "modifyTime": 1788857767000,
+    "workLocations": [
+     "杭州"
+    ],
+    "interviewLocations": null,
+    "regionEnNameMap": {},
+    "technologyNameIdMap": {},
+    "tags": null,
+    "requirement": "1. 学历统招硕士及以上\n2. 有自驱力，团队协作能力和项目管理能力\n3. 善于跨团队协作、调度资源、解决问题\n4. 英语能流利交流优先\n5. 有AI应用能力优先",
+    "description": "1. 从全链路视角推进分段的运营质量，建立横向协同机制\n2. 通过数据分析和收集，整理业务相关问题，并形成数据分析体系，汇总核心问题\n3. 搭建和管理物流运营指标体系，建立业务模型分析推进业务决策\n4. 在解决结构性问题中，形成对于数据产品的需求，制定解决方案推进落地\n5. 协同推进BA团队的AI能力建设",
+    "experience": {
+     "from": 3,
+     "to": null
+    },
+    "degree": "bachelor",
+    "department": "AE&天淘物流",
+    "project": null,
+    "positionType": null,
+    "code": "GP100025675003",
+    "categoryName": null,
+    "categoryType": null,
+    "batchName": null,
+    "batchId": null,
+    "batchWillingCount": null,
+    "channels": null,
+    "operations": []
+   }
+  ],
+  "totalCount": 3,
+  "pageSize": 50,
+  "currentPage": 1
+ }
+}

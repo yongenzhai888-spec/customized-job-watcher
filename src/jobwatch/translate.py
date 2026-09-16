@@ -1,4 +1,4 @@
-"""把 Apple 官网的英文岗位原文翻译成中文。
+"""把招聘官网的英文岗位原文翻译成中文。
 
 支持多种翻译后端，按可用性自动降级：
   1. llm       —— 任意 OpenAI 兼容接口（OpenAI / DeepSeek / 通义 / Moonshot 等），质量最好
@@ -20,7 +20,6 @@ import urllib.parse
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from .apple import JobDetail
 from .config import TranslationConfig
 from .httpclient import HttpError, post_json, request
 
@@ -350,24 +349,6 @@ def build_translator(config: TranslationConfig) -> CachingTranslator:
     if not chain or chain[-1].name != "none":
         chain.append(NullTranslator())
     return CachingTranslator(chain, config.cache_file, config.target_language)
-
-
-def translate_job(detail: JobDetail, translator: Translator) -> dict[str, str]:
-    """逐行翻译岗位正文，返回 字段名 -> 中文文本。"""
-    fields = detail.text_fields
-    line_index: list[tuple[str, int]] = []
-    lines: list[str] = []
-    for field_name, value in fields.items():
-        for pos, line in enumerate(value.split("\n")):
-            line_index.append((field_name, pos))
-            lines.append(line)
-
-    translated_lines = translator.translate_batch(lines)
-
-    grouped: dict[str, list[str]] = {name: [] for name in fields}
-    for (field_name, _), text in zip(line_index, translated_lines, strict=True):
-        grouped[field_name].append(text)
-    return {name: "\n".join(values).strip() for name, values in grouped.items()}
 
 
 def _load_google_json(raw: str):

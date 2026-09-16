@@ -1,0 +1,233 @@
+{
+ "success": true,
+ "errorMsg": null,
+ "content": [
+  {
+   "id": null,
+   "name": "技术类",
+   "code": "130",
+   "batchId": null,
+   "type": null,
+   "categories": [
+    {
+     "id": null,
+     "name": "前端",
+     "code": "133",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "运维",
+     "code": "135",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "开发",
+     "code": "136",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "质量保证",
+     "code": "137",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "安全",
+     "code": "407",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "数据",
+     "code": "408",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "算法",
+     "code": "409",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "综合",
+     "code": "410",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "综合管理",
+     "code": "411",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "地图",
+     "code": "511",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "基础平台",
+     "code": "702",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "无线（端）",
+     "code": "703",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "综合",
+     "code": "704",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "研究",
+     "code": "747",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "多媒体技术",
+     "code": "764",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "游戏技术",
+     "code": "769",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "芯片",
+     "code": "798",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "方案与服务",
+     "code": "811",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    }
+   ]
+  },
+  {
+   "id": null,
+   "name": "产品类",
+   "code": "97",
+   "batchId": null,
+   "type": null,
+   "categories": [
+    {
+     "id": null,
+     "name": "平台型",
+     "code": "403",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "商业型",
+     "code": "404",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "用户型",
+     "code": "405",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "综合管理",
+     "code": "406",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    }
+   ]
+  },
+  {
+   "id": null,
+   "name": "数据类",
+   "code": "143",
+   "batchId": null,
+   "type": null,
+   "categories": [
+    {
+     "id": null,
+     "name": "商业数据分析",
+     "code": "446",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "网站运营数据分析",
+     "code": "447",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    },
+    {
+     "id": null,
+     "name": "综合管理",
+     "code": "448",
+     "batchId": null,
+     "type": null,
+     "categories": null
+    }
+   ]
+  }
+ ]
+}

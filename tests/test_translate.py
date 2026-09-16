@@ -1,22 +1,19 @@
 import pytest
 
-from applepay_watch.apple import JobDetail
-from applepay_watch.config import TranslationConfig
-from applepay_watch.translate import (
+from jobwatch.config import TranslationConfig
+from jobwatch.translate import (
     CachingTranslator,
     GoogleWebTranslator,
     NullTranslator,
     Translator,
     build_translator,
     looks_chinese,
-    translate_job,
 )
 
 
 class FakeTranslator(Translator):
-    def __init__(self, name: str, mapping: dict[str, str] | None = None, fail: bool = False):
+    def __init__(self, name: str, fail: bool = False):
         self.name = name
-        self.mapping = mapping or {}
         self.fail = fail
         self.calls: list[list[str]] = []
 
@@ -24,7 +21,7 @@ class FakeTranslator(Translator):
         self.calls.append(list(texts))
         if self.fail:
             raise RuntimeError("后端不可用")
-        return [self.mapping.get(text, f"[{self.name}]{text}") for text in texts]
+        return [f"[{self.name}]{text}" for text in texts]
 
 
 @pytest.mark.parametrize(
@@ -41,9 +38,11 @@ def test_looks_chinese(text, expected):
 
 
 def test_falls_back_to_next_backend_when_one_fails(tmp_path):
-    broken = FakeTranslator("broken", fail=True)
-    working = FakeTranslator("working")
-    translator = CachingTranslator([broken, working], tmp_path / "cache.json", "zh-CN")
+    translator = CachingTranslator(
+        [FakeTranslator("broken", fail=True), FakeTranslator("working")],
+        tmp_path / "cache.json",
+        "zh-CN",
+    )
 
     assert translator.translate_batch(["Hello"]) == ["[working]Hello"]
     assert translator.name == "working"
@@ -72,8 +71,7 @@ def test_chinese_and_empty_text_are_not_sent_to_backend(tmp_path):
 
 def test_translations_are_cached_on_disk(tmp_path):
     cache = tmp_path / "cache.json"
-    first = FakeTranslator("backend")
-    CachingTranslator([first], cache, "zh-CN").translate_batch(["Hello"])
+    CachingTranslator([FakeTranslator("backend")], cache, "zh-CN").translate_batch(["Hello"])
 
     second = FakeTranslator("backend")
     result = CachingTranslator([second], cache, "zh-CN").translate_batch(["Hello"])
@@ -82,26 +80,10 @@ def test_translations_are_cached_on_disk(tmp_path):
     assert second.calls == []
 
 
-def test_translate_job_keeps_line_structure(tmp_path):
-    detail = JobDetail(
-        job_id="1",
-        title="SDET",
-        url="https://example.com",
-        description="Line one\nLine two",
-        responsibilities="Do A\nDo B\nDo C",
-        minimum_qualifications="Need X",
-    )
-    translator = CachingTranslator([FakeTranslator("t")], tmp_path / "cache.json", "zh-CN")
-    result = translate_job(detail, translator)
-
-    assert result["responsibilities"].split("\n") == ["[t]Do A", "[t]Do B", "[t]Do C"]
-    assert result["description"].split("\n") == ["[t]Line one", "[t]Line two"]
-    assert result["preferred_qualifications"] == ""
-
-
 def test_google_batches_requests_by_size():
     translator = GoogleWebTranslator("zh-CN")
     chunks = translator._chunks(["short"] * 25)
+
     assert all(len(chunk) <= translator.MAX_ITEMS_PER_CALL for chunk in chunks)
     assert sum(len(chunk) for chunk in chunks) == 25
 
@@ -115,14 +97,13 @@ def test_build_translator_engine_selection(tmp_path):
     auto_no_key = build_translator(TranslationConfig(engine="auto", **base))
     assert [b.name for b in auto_no_key.backends] == ["google", "mymemory", "none"]
 
-    auto_with_key = build_translator(
-        TranslationConfig(engine="auto", llm_api_key="sk-test", **base)
-    )
-    assert auto_with_key.backends[0].name == "llm"
+    with_key = build_translator(TranslationConfig(engine="auto", llm_api_key="sk-test", **base))
+    assert with_key.backends[0].name == "llm"
 
     disabled = build_translator(TranslationConfig(engine="none", **base))
     assert isinstance(disabled.backends[0], NullTranslator)
 
-    # 指定了 llm 却没有 key 时不应该崩溃，而是退化成不翻译
-    missing_key = build_translator(TranslationConfig(engine="llm", **base))
-    assert [b.name for b in missing_key.backends] == ["none"]
+    # 指定了 llm 却没有 key 时不该崩溃，而是退化成不翻译
+    assert [b.name for b in build_translator(TranslationConfig(engine="llm", **base)).backends] == [
+        "none"
+    ]

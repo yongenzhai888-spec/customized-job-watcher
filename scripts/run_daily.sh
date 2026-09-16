@@ -2,7 +2,7 @@
 # 供 cron 调用的包装脚本：切到项目目录、用项目自带的 Python 执行一次监测，并留下日志。
 #
 #   crontab -e
-#   0 9 * * * /绝对路径/applepay-job-watcher/scripts/run_daily.sh
+#   0 9 * * * /绝对路径/job-watcher/scripts/run_daily.sh
 #
 set -euo pipefail
 
@@ -20,5 +20,5 @@ LOG_FILE="logs/watch-$(date +%Y-%m).log"
 
 {
   echo "──────── $(date '+%Y-%m-%d %H:%M:%S') ────────"
-  PYTHONPATH="$PROJECT_DIR/src" "$PYTHON" -m applepay_watch run "$@"
+  PYTHONPATH="$PROJECT_DIR/src" "$PYTHON" -m jobwatch run "$@"
 } >>"$LOG_FILE" 2>&1

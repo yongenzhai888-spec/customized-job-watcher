@@ -2,31 +2,36 @@ import smtplib
 
 import pytest
 
-from applepay_watch.config import MailConfig
-from applepay_watch.email_render import EmailContent
-from applepay_watch.mailer import (
+from jobwatch.config import MailConfig
+from jobwatch.email_render import EmailContent
+from jobwatch.mailer import (
     AuthError,
+    ConfigError,
     FileMailer,
     SMTPMailer,
     auth_hint,
     build_mailer,
     build_message,
+    ensure_mail_configured,
 )
 
 CONTENT = EmailContent(
-    subject="[Apple Pay 招聘监测] 新增 1 个岗位 · SDET - Apple Pay 质量工程师",
+    subject="[岗位监测] 阿里国际 新增 1 个岗位 · 产品经理",
     html_body="<html><body><p>中文正文</p></body></html>",
     text_body="中文正文",
 )
 
 
-def test_message_is_multipart_with_utf8_parts():
-    config = MailConfig(username="me@gmail.com", password="pw", recipients=["you@gmail.com"])
-    message = build_message(CONTENT, config)
+def cfg(**overrides) -> MailConfig:
+    return MailConfig(**{"username": "bot@example.com", "password": "pw", **overrides})
 
-    assert message["To"] == "you@gmail.com"
-    assert "me@gmail.com" in message["From"]
-    assert "Apple Pay" in message["Subject"]
+
+def test_message_is_multipart_with_utf8_parts():
+    message = build_message(CONTENT, cfg(), ["you@example.com"])
+
+    assert message["To"] == "you@example.com"
+    assert "bot@example.com" in message["From"]
+    assert "阿里国际" in message["Subject"]
 
     bodies = {part.get_content_type() for part in message.walk() if not part.is_multipart()}
     assert bodies == {"text/plain", "text/html"}
@@ -34,21 +39,8 @@ def test_message_is_multipart_with_utf8_parts():
 
 
 def test_multiple_recipients_are_joined():
-    config = MailConfig(
-        username="me@gmail.com", password="pw", recipients=["a@x.com", "b@x.com"]
-    )
-    assert build_message(CONTENT, config)["To"] == "a@x.com, b@x.com"
-
-
-def test_file_mailer_writes_preview_files(tmp_path):
-    config = MailConfig(username="me@gmail.com", password="pw")
-    message = FileMailer(tmp_path, config).send(CONTENT)
-
-    suffixes = sorted(path.suffix for path in tmp_path.iterdir())
-    assert suffixes == [".eml", ".html", ".txt"]
-    assert "dry-run" in message
-    html = next(tmp_path.glob("*.html")).read_text(encoding="utf-8")
-    assert "中文正文" in html
+    message = build_message(CONTENT, cfg(), ["a@x.com", "b@x.com"])
+    assert message["To"] == "a@x.com, b@x.com"
 
 
 class FakeSMTP:
@@ -57,9 +49,7 @@ class FakeSMTP:
     instances: list["FakeSMTP"] = []
 
     def __init__(self, host, port, timeout=None, context=None):
-        self.host = host
-        self.port = port
-        self.context = context
+        self.host, self.port = host, port
         self.calls: list[str] = []
         self.sent: list = []
         FakeSMTP.instances.append(self)
@@ -84,28 +74,20 @@ class FakeSMTP:
 def test_starttls_flow(monkeypatch):
     FakeSMTP.instances.clear()
     monkeypatch.setattr("smtplib.SMTP", FakeSMTP)
-    config = MailConfig(username="me@gmail.com", password="pw", recipients=["you@gmail.com"])
 
-    assert "you@gmail.com" in SMTPMailer(config).send(CONTENT)
+    assert "you@example.com" in SMTPMailer(cfg(), ["you@example.com"]).send(CONTENT)
 
     server = FakeSMTP.instances[0]
     assert (server.host, server.port) == ("smtp.gmail.com", 587)
-    assert server.calls == ["ehlo", "starttls", "ehlo", "login:me@gmail.com", "send", "quit"]
+    assert server.calls == ["ehlo", "starttls", "ehlo", "login:bot@example.com", "send", "quit"]
 
 
 def test_ssl_flow_skips_starttls(monkeypatch):
     FakeSMTP.instances.clear()
     monkeypatch.setattr("smtplib.SMTP_SSL", FakeSMTP)
-    config = MailConfig(
-        host="smtp.qq.com",
-        port=465,
-        username="me@qq.com",
-        password="pw",
-        use_ssl=True,
-        use_starttls=False,
-    )
+    config = cfg(host="smtp.qq.com", port=465, use_ssl=True, use_starttls=False)
 
-    SMTPMailer(config).send(CONTENT)
+    SMTPMailer(config, ["you@qq.com"]).send(CONTENT)
 
     server = FakeSMTP.instances[0]
     assert (server.host, server.port) == ("smtp.qq.com", 465)
@@ -115,9 +97,8 @@ def test_ssl_flow_skips_starttls(monkeypatch):
 def test_verify_logs_in_without_sending(monkeypatch):
     FakeSMTP.instances.clear()
     monkeypatch.setattr("smtplib.SMTP", FakeSMTP)
-    config = MailConfig(username="me@gmail.com", password="pw")
 
-    message = SMTPMailer(config).verify()
+    message = SMTPMailer(cfg(), ["you@example.com"]).verify()
 
     assert "登录成功" in message
     assert FakeSMTP.instances[0].sent == []
@@ -131,22 +112,19 @@ def test_gmail_auth_failure_explains_app_password_and_2fa(monkeypatch):
 
     FakeSMTP.instances.clear()
     monkeypatch.setattr("smtplib.SMTP", RejectingSMTP)
-    config = MailConfig(username="me@gmail.com", password="wrong")
 
     with pytest.raises(AuthError) as excinfo:
-        SMTPMailer(config).send(CONTENT)
+        SMTPMailer(cfg(host="smtp.gmail.com"), ["you@gmail.com"]).send(CONTENT)
 
     hint = str(excinfo.value)
-    assert "应用专用密码" in hint
-    assert "两步验证" in hint
+    assert "应用专用密码" in hint and "两步验证" in hint
     assert "myaccount.google.com/apppasswords" in hint
-    # 连接必须被关掉，不能因为认证失败就泄漏 socket
+    # 认证失败也不能泄漏连接
     assert FakeSMTP.instances[0].calls[-1] == "quit"
 
 
 def test_qq_auth_failure_mentions_authorization_code():
-    config = MailConfig(host="smtp.qq.com", port=465, username="me@qq.com", use_ssl=True)
-    hint = auth_hint(config, RuntimeError("535 login fail"))
+    hint = auth_hint(cfg(host="smtp.qq.com", port=465), RuntimeError("535 login fail"))
 
     assert "授权码" in hint
     assert "应用专用密码" not in hint
@@ -159,23 +137,37 @@ def test_connection_is_closed_even_when_sending_fails(monkeypatch):
 
     FakeSMTP.instances.clear()
     monkeypatch.setattr("smtplib.SMTP", BrokenSMTP)
-    config = MailConfig(username="me@gmail.com", password="pw")
 
-    try:
-        SMTPMailer(config).send(CONTENT)
-    except RuntimeError:
-        pass
+    with pytest.raises(RuntimeError):
+        SMTPMailer(cfg(), ["you@example.com"]).send(CONTENT)
 
     assert "quit" in FakeSMTP.instances[0].calls
 
 
-def test_dry_run_and_missing_credentials_both_use_file_mailer(tmp_path):
-    configured = MailConfig(username="me@example.com", password="pw", recipients=["you@example.com"])
-    assert isinstance(build_mailer(configured, tmp_path, dry_run=True), FileMailer)
-    assert isinstance(build_mailer(configured, tmp_path, dry_run=False), SMTPMailer)
-    assert isinstance(build_mailer(MailConfig(), tmp_path, dry_run=False), FileMailer)
+def test_file_mailer_writes_preview_files(tmp_path):
+    message = FileMailer(tmp_path, cfg(), ["you@example.com"]).send(CONTENT)
+
+    assert sorted(path.suffix for path in tmp_path.iterdir()) == [".eml", ".html", ".txt"]
+    assert "dry-run" in message
+    assert "中文正文" in next(tmp_path.glob("*.html")).read_text(encoding="utf-8")
 
 
-def test_missing_recipient_also_falls_back_to_file_mailer(tmp_path):
-    no_recipient = MailConfig(username="me@example.com", password="pw")
-    assert isinstance(build_mailer(no_recipient, tmp_path, dry_run=False), FileMailer)
+def test_dry_run_and_incomplete_config_use_file_mailer(tmp_path):
+    ready, to = cfg(), ["you@example.com"]
+    assert isinstance(build_mailer(ready, to, tmp_path, dry_run=True), FileMailer)
+    assert isinstance(build_mailer(ready, to, tmp_path, dry_run=False), SMTPMailer)
+    # 缺密码或缺收件人都不该尝试连 SMTP
+    assert isinstance(build_mailer(cfg(password=""), to, tmp_path, dry_run=False), FileMailer)
+    assert isinstance(build_mailer(ready, [], tmp_path, dry_run=False), FileMailer)
+
+
+def test_require_mail_raises_with_actionable_message(tmp_path):
+    with pytest.raises(ConfigError) as excinfo:
+        build_mailer(cfg(password=""), ["a@b.com"], tmp_path, dry_run=False, require_mail=True)
+
+    assert "SMTP_PASSWORD" in str(excinfo.value)
+    assert "Secrets" in str(excinfo.value)
+
+
+def test_ensure_mail_configured_passes_when_ready():
+    ensure_mail_configured(cfg())

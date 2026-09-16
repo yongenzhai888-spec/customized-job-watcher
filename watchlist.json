@@ -1,0 +1,48 @@
+{
+  "$comment": [
+    "监测清单。想加一个来源，照着现有条目复制一份即可。",
+    "收件人只写环境变量名，真实邮箱放 .env 或 GitHub Secrets——本仓库是公开的。"
+  ],
+  "sources": [
+    {
+      "id": "apple-pay",
+      "name": "Apple Pay · 中国大陆",
+      "provider": "apple",
+      "translate": true,
+      "recipients_env": "MAIL_TO",
+      "params": {
+        "list_url": "https://jobs.apple.com/zh-cn/search?location=china-CHNC&product=apple-pay-APPAY",
+        "locale": "zh-cn"
+      }
+    },
+    {
+      "id": "alibaba-aidc",
+      "name": "阿里国际 AIDC · 产品类 / 数据类",
+      "provider": "alibaba",
+      "translate": false,
+      "recipients_env": "MAIL_TO_CN",
+      "params": {
+        "list_url": "https://aidc-jobs.alibaba.com/off-campus/position-list?lang=zh",
+        "categories": ["97", "143"]
+      }
+    },
+    {
+      "id": "bytedance-product",
+      "name": "字节跳动 / TikTok · 产品类",
+      "provider": "bytedance",
+      "translate": false,
+      "recipients_env": "MAIL_TO_CN",
+      "params": {
+        "list_url": "https://jobs.bytedance.com/experienced/position?category=6704215864629004552%2C6704215864591255820%2C6704215924712409352%2C6704216224387041544",
+        "category_ids": [
+          "6704215864629004552",
+          "6704215864591255820",
+          "6704215924712409352",
+          "6704216224387041544"
+        ],
+        "website_path": "society",
+        "title_pattern": ""
+      }
+    }
+  ]
+}
