@@ -173,8 +173,8 @@ class AlibabaAidcSource(JobSource):
             ("职位编号", clean_text(raw.get("code")) or ref.job_id),
         ]
         sections = [
-            JobSection("岗位描述", clean_text(raw.get("description")), SectionStyle.BULLETS),
-            JobSection("任职要求", clean_text(raw.get("requirement")), SectionStyle.BULLETS),
+            JobSection("岗位描述", _strip_heading(raw.get("description")), SectionStyle.BULLETS),
+            JobSection("任职要求", _strip_heading(raw.get("requirement")), SectionStyle.BULLETS),
         ]
         return JobPosting(
             job_id=ref.job_id,
@@ -183,6 +183,20 @@ class AlibabaAidcSource(JobSource):
             meta=[(k, v) for k, v in meta if v],
             sections=[s for s in sections if not s.is_empty],
         )
+
+
+#: 阿里的正文常以"职位描述："这类标题行开头，而邮件里已经有章节标题了。
+HEADING_LINES = frozenset(
+    {"职位描述", "职位要求", "岗位描述", "岗位要求", "岗位职责", "任职要求", "工作职责", "职责描述"}
+)
+
+
+def _strip_heading(value: object) -> str:
+    text = clean_text(value)
+    lines = text.split("\n")
+    if lines and lines[0].rstrip("：:").strip() in HEADING_LINES:
+        return "\n".join(lines[1:]).strip()
+    return text
 
 
 def _experience(value: object) -> str:

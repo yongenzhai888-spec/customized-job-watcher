@@ -113,6 +113,31 @@ def test_posting_uses_list_payload_without_extra_request(alibaba_search):
     assert "track_id" not in posting.url
 
 
+def test_redundant_heading_line_is_dropped(alibaba_search):
+    """正文常以"职位描述："开头，邮件里已经有章节标题，再列一条是噪音。"""
+    rows = alibaba_search["content"]["datas"]
+    rows[0]["description"] = "职位描述：\n负责产品规划\n推动方案落地"
+    rows[0]["requirement"] = "职位要求\n本科及以上学历"
+    session = FakeSession({"/position/search": alibaba_search})
+    source = make_source(session, categories=[])
+
+    posting = source.fetch_posting(source.list_jobs()[0])
+
+    assert posting.sections[0].lines == ["负责产品规划", "推动方案落地"]
+    assert posting.sections[1].lines == ["本科及以上学历"]
+
+
+def test_body_without_heading_is_left_alone(alibaba_search):
+    rows = alibaba_search["content"]["datas"]
+    rows[0]["description"] = "负责产品规划\n推动方案落地"
+    session = FakeSession({"/position/search": alibaba_search})
+    source = make_source(session, categories=[])
+
+    posting = source.fetch_posting(source.list_jobs()[0])
+
+    assert posting.sections[0].lines == ["负责产品规划", "推动方案落地"]
+
+
 def test_search_failure_surfaces_error_message():
     session = FakeSession({"/position/search": {"success": False, "errorMsg": "系统繁忙"}})
     with pytest.raises(SourceError, match="系统繁忙"):
