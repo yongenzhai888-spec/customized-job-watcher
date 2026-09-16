@@ -137,6 +137,18 @@ def test_source_without_recipients_is_skipped(config_factory, wiring):
     assert wiring["mailer"].sent == []
 
 
+def test_require_mail_turns_missing_recipients_into_a_failure(config_factory, wiring):
+    """定时任务里"跳过"等于悄悄不发邮件，最难发现，所以必须直接失败。"""
+    config = config_factory(make_spec("demo", recipients=[], recipients_env="MAIL_TO_CN"))
+    wiring["install"]([ref("a")])
+
+    report = watcher.run_all(config, require_mail=True)
+
+    assert report.failed
+    assert "MAIL_TO_CN" in report.failed[0].error
+    assert wiring["mailer"].sent == []
+
+
 def test_disabled_source_is_not_run(config_factory, wiring):
     config = config_factory(make_spec("demo", enabled=False))
     wiring["install"]([ref("a")])

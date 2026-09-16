@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 from .config import Config, SourceSpec
 from .email_render import build_email
-from .mailer import build_mailer, ensure_mail_configured
+from .mailer import ConfigError, build_mailer, ensure_mail_configured
 from .models import JobPosting, JobRef
 from .sources import JobSource, build_source
 from .store import JobStore
@@ -108,8 +108,16 @@ def run_source(
     result = SourceResult(spec.source_id, spec.display_name)
 
     if not spec.has_recipients and not dry_run:
+        hint = f"没有收件人，请设置环境变量 {spec.recipients_env}"
+        if require_mail:
+            # 定时任务里"跳过"等于悄悄不发邮件，这正是最难发现的故障，所以直接失败。
+            raise ConfigError(
+                f"来源「{spec.display_name}」{hint}。\n"
+                "在 GitHub Actions 上到 Settings → Secrets and variables → Actions 的 "
+                f"Variables 里添加 {spec.recipients_env}；本机运行则写进 .env。"
+            )
         result.skipped = True
-        result.message = f"没有收件人，请设置环境变量 {spec.recipients_env}"
+        result.message = hint
         log.warning("[%s] %s", spec.source_id, result.message)
         return result
 
