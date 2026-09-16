@@ -77,9 +77,9 @@ def run_all(
         if spec.enabled and not (only and spec.source_id not in only)
     ]
     if require_mail and not dry_run:
-        # 先把配置问题一次性说清楚，别等抓完一个来源才在半路上报错。
+        # 发信通道不通则一个来源都发不出去，直接中止；
+        # 而某个来源缺收件人只影响它自己，配好的来源照常跑完（见 run_source）。
         ensure_mail_configured(config.mail)
-        ensure_recipients(selected)
 
     for spec in config.sources:
         if not spec.enabled and not (only and spec.source_id not in only):
@@ -107,20 +107,13 @@ def run_all(
     return report
 
 
-def ensure_recipients(specs: list[SourceSpec]) -> None:
-    """定时任务里"跳过某个来源"等于悄悄不发邮件，最难发现，所以缺收件人就直接失败。"""
-    missing = sorted({spec.recipients_env for spec in specs if not spec.has_recipients})
-    if not missing:
-        return
-    names = "、".join(missing)
-    affected = "、".join(
-        spec.display_name for spec in specs if not spec.has_recipients
-    )
-    raise ConfigError(
-        f"以下来源没有收件人：{affected}。\n"
-        f"缺少环境变量：{names}。\n"
+def missing_recipients_error(recipients_env: str) -> ConfigError:
+    """刻意不把来源名写进正文：多个来源共用一个变量时，
+    CLI 末尾就能把这段一模一样的指引去重成一条。"""
+    return ConfigError(
+        f"没有收件人，需要设置环境变量 {recipients_env}。\n"
         "在 GitHub Actions 上到 Settings → Secrets and variables → Actions 的 Variables "
-        f"里添加 {names}（值填收件邮箱）；本机运行则写进项目根目录的 .env。"
+        f"里添加 {recipients_env}（值填收件邮箱）；本机运行则写进项目根目录的 .env。"
     )
 
 
@@ -136,7 +129,8 @@ def run_source(
 
     if not spec.has_recipients and not dry_run:
         if require_mail:
-            ensure_recipients([spec])
+            # 定时任务里"跳过"等于悄悄不发邮件，最难发现，所以记成失败。
+            raise missing_recipients_error(spec.recipients_env)
         result.skipped = True
         result.message = f"没有收件人，请设置环境变量 {spec.recipients_env}"
         log.warning("[%s] %s", spec.source_id, result.message)

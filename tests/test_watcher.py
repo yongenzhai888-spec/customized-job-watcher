@@ -138,50 +138,44 @@ def test_source_without_recipients_is_skipped(config_factory, wiring):
 
 
 def test_require_mail_turns_missing_recipients_into_a_failure(config_factory, wiring):
-    """定时任务里"跳过"等于悄悄不发邮件，最难发现，所以必须直接失败。"""
-    from jobwatch.mailer import ConfigError
-
+    """定时任务里"跳过"等于悄悄不发邮件，最难发现，所以必须记成失败。"""
     config = config_factory(make_spec("demo", recipients=[], recipients_env="MAIL_TO_CN"))
     wiring["install"]([ref("a")])
 
-    with pytest.raises(ConfigError, match="MAIL_TO_CN"):
-        watcher.run_all(config, require_mail=True)
+    report = watcher.run_all(config, require_mail=True)
 
+    assert "MAIL_TO_CN" in report.failed[0].error
     assert wiring["mailer"].sent == []
 
 
-def test_missing_recipients_are_reported_before_any_scraping(config_factory, wiring):
-    """别等第一个来源抓完、邮件都发出去了，才在半路上报配置错误。"""
-    from jobwatch.mailer import ConfigError
-
+def test_configured_sources_still_run_when_another_lacks_recipients(config_factory, wiring):
+    """Apple 明明配好了，不该因为另一个来源没配收件人就跟着停摆。"""
     config = config_factory(
-        make_spec("has-recipients", recipients=["a@example.com"]),
-        make_spec("no-recipients", recipients=[], recipients_env="MAIL_TO_CN"),
-    )
-    source = wiring["install"]([ref("a")])
-
-    with pytest.raises(ConfigError) as excinfo:
-        watcher.run_all(config, require_mail=True)
-
-    assert source.fetched == []  # 一次网络请求都还没发生
-    assert wiring["mailer"].sent == []
-    assert "MAIL_TO_CN" in str(excinfo.value)
-
-
-def test_all_missing_recipient_vars_are_listed_at_once(config_factory, wiring):
-    from jobwatch.mailer import ConfigError
-
-    config = config_factory(
-        make_spec("a", recipients=[], recipients_env="MAIL_TO_CN"),
-        make_spec("b", recipients=[], recipients_env="MAIL_TO_JP"),
+        make_spec("configured", recipients=["a@example.com"]),
+        make_spec("unconfigured", recipients=[], recipients_env="MAIL_TO_CN"),
+        notify_on_first_run=True,
     )
     wiring["install"]([ref("a")])
 
-    with pytest.raises(ConfigError) as excinfo:
-        watcher.run_all(config, require_mail=True)
+    report = watcher.run_all(config, require_mail=True)
+    by_id = {r.source_id: r for r in report.results}
 
-    message = str(excinfo.value)
-    assert "MAIL_TO_CN" in message and "MAIL_TO_JP" in message
+    assert by_id["configured"].email_sent is True
+    assert by_id["unconfigured"].error
+    assert len(report.failed) == 1  # 整体仍然失败，退出码非 0
+
+
+def test_sources_sharing_one_env_var_produce_identical_hints(config_factory, wiring):
+    """两个来源共用 MAIL_TO_CN 时，末尾的排查指引应当能去重成一条。"""
+    config = config_factory(
+        make_spec("a", recipients=[], recipients_env="MAIL_TO_CN"),
+        make_spec("b", recipients=[], recipients_env="MAIL_TO_CN"),
+    )
+    wiring["install"]([ref("a")])
+
+    report = watcher.run_all(config, require_mail=True)
+
+    assert len({r.error for r in report.failed}) == 1
 
 
 def test_failure_summary_keeps_only_the_first_line(config_factory, monkeypatch):
