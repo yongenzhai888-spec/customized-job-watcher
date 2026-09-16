@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import time
 
@@ -16,6 +17,15 @@ from .store import JobStore
 from .watcher import run_all
 
 log = logging.getLogger("jobwatch")
+
+
+def gh_annotate(level: str, title: str, message: str) -> None:
+    """在 GitHub Actions 上把失败原因写成注解，直接显示在运行页的 Annotations 里，
+    而不是只留一句 "Process completed with exit code 1"。"""
+    if os.environ.get("GITHUB_ACTIONS") != "true":
+        return
+    escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    print(f"::{level} title={title}::{escaped}", flush=True)
 
 
 def _setup_logging(verbose: bool) -> None:
@@ -49,6 +59,18 @@ def _cmd_run(args: argparse.Namespace, config: Config) -> int:
         f"\n合计：新增 {report.new_job_count} 个岗位，发出 {report.emails_sent} 封邮件，"
         f"{len(report.failed)} 个来源失败。"
     )
+    if report.failed:
+        # 完整的排查指引在这里统一打印一次，上面的逐行摘要只留首行
+        details = list(dict.fromkeys(r.error for r in report.failed))
+        print("\n" + "─" * 60)
+        for detail in details:
+            print(detail)
+        print("─" * 60)
+        gh_annotate(
+            "error",
+            f"{len(report.failed)} 个来源失败",
+            "\n\n".join(details),
+        )
     return 1 if report.failed else 0
 
 
@@ -302,6 +324,7 @@ def main(argv: list[str] | None = None) -> int:
         return 130
     except Exception as exc:
         log.error("运行失败：%s", exc, exc_info=args.verbose)
+        gh_annotate("error", "岗位监测运行失败", str(exc))
         return 1
 
 

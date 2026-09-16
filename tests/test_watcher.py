@@ -139,14 +139,64 @@ def test_source_without_recipients_is_skipped(config_factory, wiring):
 
 def test_require_mail_turns_missing_recipients_into_a_failure(config_factory, wiring):
     """定时任务里"跳过"等于悄悄不发邮件，最难发现，所以必须直接失败。"""
+    from jobwatch.mailer import ConfigError
+
     config = config_factory(make_spec("demo", recipients=[], recipients_env="MAIL_TO_CN"))
     wiring["install"]([ref("a")])
 
-    report = watcher.run_all(config, require_mail=True)
+    with pytest.raises(ConfigError, match="MAIL_TO_CN"):
+        watcher.run_all(config, require_mail=True)
 
-    assert report.failed
-    assert "MAIL_TO_CN" in report.failed[0].error
     assert wiring["mailer"].sent == []
+
+
+def test_missing_recipients_are_reported_before_any_scraping(config_factory, wiring):
+    """别等第一个来源抓完、邮件都发出去了，才在半路上报配置错误。"""
+    from jobwatch.mailer import ConfigError
+
+    config = config_factory(
+        make_spec("has-recipients", recipients=["a@example.com"]),
+        make_spec("no-recipients", recipients=[], recipients_env="MAIL_TO_CN"),
+    )
+    source = wiring["install"]([ref("a")])
+
+    with pytest.raises(ConfigError) as excinfo:
+        watcher.run_all(config, require_mail=True)
+
+    assert source.fetched == []  # 一次网络请求都还没发生
+    assert wiring["mailer"].sent == []
+    assert "MAIL_TO_CN" in str(excinfo.value)
+
+
+def test_all_missing_recipient_vars_are_listed_at_once(config_factory, wiring):
+    from jobwatch.mailer import ConfigError
+
+    config = config_factory(
+        make_spec("a", recipients=[], recipients_env="MAIL_TO_CN"),
+        make_spec("b", recipients=[], recipients_env="MAIL_TO_JP"),
+    )
+    wiring["install"]([ref("a")])
+
+    with pytest.raises(ConfigError) as excinfo:
+        watcher.run_all(config, require_mail=True)
+
+    message = str(excinfo.value)
+    assert "MAIL_TO_CN" in message and "MAIL_TO_JP" in message
+
+
+def test_failure_summary_keeps_only_the_first_line(config_factory, monkeypatch):
+    """完整指引由 CLI 末尾统一打印一次，逐行摘要里重复三遍反而看不清。"""
+    config = config_factory(make_spec("demo"))
+
+    def build(spec, **kwargs):
+        raise RuntimeError("站点改版了\n第二行详细说明\n第三行")
+
+    monkeypatch.setattr(watcher, "build_source", build)
+    result = watcher.run_all(config).results[0]
+
+    assert result.summary.endswith("站点改版了")
+    assert "第二行详细说明" not in result.summary
+    assert "第三行" in result.error  # 完整内容仍保留在 error 里
 
 
 def test_disabled_source_is_not_run(config_factory, wiring):

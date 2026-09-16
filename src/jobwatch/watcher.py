@@ -32,7 +32,9 @@ class SourceResult:
     @property
     def summary(self) -> str:
         if self.error:
-            return f"{self.display_name}：失败——{self.error}"
+            # 只取首行：完整的排查指引由调用方在末尾统一打印一次，
+            # 否则同一段多行提示会在日志里重复三遍，反而看不清。
+            return f"{self.display_name}：失败——{self.error.splitlines()[0]}"
         if self.skipped:
             return f"{self.display_name}：已跳过——{self.message}"
         if self.baseline_only:
@@ -69,16 +71,22 @@ def run_all(
     only: list[str] | None = None,
 ) -> RunReport:
     """跑完所有来源。单个来源失败不影响其它来源。"""
+    selected = [
+        spec
+        for spec in config.sources
+        if spec.enabled and not (only and spec.source_id not in only)
+    ]
     if require_mail and not dry_run:
+        # 先把配置问题一次性说清楚，别等抓完一个来源才在半路上报错。
         ensure_mail_configured(config.mail)
+        ensure_recipients(selected)
+
+    for spec in config.sources:
+        if not spec.enabled and not (only and spec.source_id not in only):
+            log.info("[%s] 已在 watchlist 中禁用，跳过", spec.source_id)
 
     report = RunReport()
-    for spec in config.sources:
-        if only and spec.source_id not in only:
-            continue
-        if not spec.enabled:
-            log.info("[%s] 已在 watchlist 中禁用，跳过", spec.source_id)
-            continue
+    for spec in selected:
         try:
             report.results.append(
                 run_source(
@@ -90,11 +98,30 @@ def run_all(
                 )
             )
         except Exception as exc:
-            log.error("[%s] 抓取失败：%s", spec.source_id, exc, exc_info=log.isEnabledFor(10))
+            message = str(exc)
+            log.error("[%s] 失败：%s", spec.source_id, message.splitlines()[0])
+            log.debug("[%s] 完整错误", spec.source_id, exc_info=True)
             report.results.append(
-                SourceResult(spec.source_id, spec.display_name, error=str(exc))
+                SourceResult(spec.source_id, spec.display_name, error=message)
             )
     return report
+
+
+def ensure_recipients(specs: list[SourceSpec]) -> None:
+    """定时任务里"跳过某个来源"等于悄悄不发邮件，最难发现，所以缺收件人就直接失败。"""
+    missing = sorted({spec.recipients_env for spec in specs if not spec.has_recipients})
+    if not missing:
+        return
+    names = "、".join(missing)
+    affected = "、".join(
+        spec.display_name for spec in specs if not spec.has_recipients
+    )
+    raise ConfigError(
+        f"以下来源没有收件人：{affected}。\n"
+        f"缺少环境变量：{names}。\n"
+        "在 GitHub Actions 上到 Settings → Secrets and variables → Actions 的 Variables "
+        f"里添加 {names}（值填收件邮箱）；本机运行则写进项目根目录的 .env。"
+    )
 
 
 def run_source(
@@ -108,16 +135,10 @@ def run_source(
     result = SourceResult(spec.source_id, spec.display_name)
 
     if not spec.has_recipients and not dry_run:
-        hint = f"没有收件人，请设置环境变量 {spec.recipients_env}"
         if require_mail:
-            # 定时任务里"跳过"等于悄悄不发邮件，这正是最难发现的故障，所以直接失败。
-            raise ConfigError(
-                f"来源「{spec.display_name}」{hint}。\n"
-                "在 GitHub Actions 上到 Settings → Secrets and variables → Actions 的 "
-                f"Variables 里添加 {spec.recipients_env}；本机运行则写进 .env。"
-            )
+            ensure_recipients([spec])
         result.skipped = True
-        result.message = hint
+        result.message = f"没有收件人，请设置环境变量 {spec.recipients_env}"
         log.warning("[%s] %s", spec.source_id, result.message)
         return result
 

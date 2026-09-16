@@ -29,9 +29,9 @@ jobs:
       # 这样下一次运行才知道哪些岗位是"已经通知过的"。
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -74,7 +74,7 @@ jobs:
 
       - name: 上传邮件预览（仅在未配置 SMTP 时产生）
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: email-preview
           path: out/
