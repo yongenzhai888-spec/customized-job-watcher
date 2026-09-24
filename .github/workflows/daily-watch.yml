@@ -14,6 +14,10 @@ on:
         description: "只跑某一个来源（填 watchlist 里的 id，留空跑全部）"
         type: string
         default: ""
+      rebuild_top10:
+        description: "先按口径重排一次 Top10 名单（首次部署或换了口径时勾上）"
+        type: boolean
+        default: false
 
 concurrency:
   group: job-watch
@@ -57,23 +61,35 @@ jobs:
           TOP10_PROFILE_JSON: ${{ secrets.TOP10_PROFILE_JSON }}
         # --require-mail：发信没配好就直接让这次运行失败，
         # 而不是悄悄把邮件写成文件、让人误以为一切正常。
-        run: >-
-          PYTHONPATH=src python -m jobwatch run --require-mail
-          ${{ inputs.force && '--force' || '' }}
-          ${{ inputs.source && format('--source {0}', inputs.source) || '' }}
+        run: |
+          if [[ "${{ inputs.rebuild_top10 }}" == "true" ]]; then
+            echo "先按口径重排 Top10 名单"
+            PYTHONPATH=src python -m jobwatch top10 --rebuild
+          fi
+          PYTHONPATH=src python -m jobwatch run --require-mail \
+            ${{ inputs.force && '--force' || '' }} \
+            ${{ inputs.source && format('--source {0}', inputs.source) || '' }}
 
-      - name: 保存岗位快照
+      - name: 保存岗位快照与匹配名单
         # 即使某个来源抓取失败，也要把成功来源的快照存下来
         if: always()
         run: |
-          if [[ -n "$(git status --porcelain state/)" ]]; then
+          changed="$(git status --porcelain state/ 2>/dev/null)"
+          if [[ -f local/top10.json ]]; then
+            changed="$changed$(git status --porcelain local/top10.json 2>/dev/null)"
+          fi
+          if [[ -n "$changed" ]]; then
             git config user.name  "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add state/
-            git commit -m "chore: 更新岗位快照 ($(date -u +%Y-%m-%d))"
+            git add -A state/
+            # local/ 里只有名单会被提交：profile.json 仍被 .gitignore 排除
+            if [[ -f local/top10.json ]]; then
+              git add local/top10.json
+            fi
+            git commit -m "chore: 更新岗位快照与匹配名单 ($(date -u +%Y-%m-%d))"
             git push
           else
-            echo "岗位没有变化，无需提交"
+            echo "岗位与名单都没有变化，无需提交"
           fi
 
       - name: 上传邮件预览（仅在未配置 SMTP 时产生）

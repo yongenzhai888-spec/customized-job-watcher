@@ -16,6 +16,7 @@ from .match import (
     business_map_reminder,
     days_since,
     now_iso,
+    rebuild_top10,
     today_str,
     update_top10,
 )
@@ -159,6 +160,18 @@ def _extras_for_run(
     """算本轮要挂在邮件末尾的东西：Top10 区块、月度提醒、以及挂给哪一封邮件。"""
     profile = MatchProfile.load()
     state = TopState.load()
+
+    # 云端 runner 是全新的，第一次跑没有名单文件；就用本轮已经抓到的全部岗位
+    # 先重建一份，否则名单只能靠“新增岗位”一点点涨起来。
+    if not state.entries:
+        candidates = [
+            (ref, item.spec.source_id, item.spec.display_name)
+            for item in prepared_list
+            for ref in item.jobs
+        ]
+        if candidates and rebuild_top10(profile, state, candidates=candidates):
+            state.save()
+            log.info("[top10] 本轮没有现成名单，已用抓到的 %s 个岗位重建", len(candidates))
 
     new_jobs = [
         (ref, prepared.spec.source_id, prepared.spec.display_name)
