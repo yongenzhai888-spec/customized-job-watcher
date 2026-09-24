@@ -43,6 +43,56 @@
         "website_path": "society",
         "title_pattern": ""
       }
+    },
+    {
+      "id": "bytedance-volcano",
+      "name": "字节跳动 · 火山引擎",
+      "provider": "bytedance",
+      "translate": false,
+      "recipients_env": "MAIL_TO_CN",
+      "params": {
+        "list_url": "https://jobs.bytedance.com/experienced/position",
+        "keyword": "火山引擎",
+        "website_path": "society",
+        "title_pattern": "产品|解决方案"
+      }
+    },
+    {
+      "id": "bytedance-hongguo",
+      "name": "字节跳动 · 红果短剧",
+      "provider": "bytedance",
+      "translate": false,
+      "recipients_env": "MAIL_TO_CN",
+      "params": {
+        "list_url": "https://jobs.bytedance.com/experienced/position",
+        "keyword": "红果",
+        "website_path": "society",
+        "title_pattern": "产品|策略"
+      }
+    },
+    {
+      "id": "xiaohongshu-social",
+      "name": "小红书 · 社招（产品 / 商家 / 电商 / 供应链）",
+      "provider": "xiaohongshu",
+      "translate": false,
+      "recipients_env": "MAIL_TO_CN",
+      "params": {
+        "list_url": "https://job.xiaohongshu.com/social/position",
+        "recruit_type": "social",
+        "title_pattern": "产品|商家|电商|供应链|履约|交易|买手"
+      }
+    },
+    {
+      "id": "tonghuashun-social",
+      "name": "同花顺 · 社招",
+      "provider": "tonghuashun",
+      "translate": false,
+      "recipients_env": "MAIL_TO_CN",
+      "params": {
+        "list_url": "https://campus.10jqka.com.cn/jobSocial/list?type=social",
+        "recruit_type": "social",
+        "title_pattern": ""
+      }
     }
   ]
 }

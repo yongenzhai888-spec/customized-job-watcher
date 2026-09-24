@@ -51,6 +51,10 @@ jobs:
           LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
           LLM_MODEL: ${{ vars.LLM_MODEL }}
           DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+          # 匹配口径（词表 / 年限上限 / 城市权重）以 JSON 形式放进 Secret，
+          # 这样邮件末尾的 Top10 在云端也能排名，而不用把口径文件提交进仓库。
+          # 不配这个 Secret 也不会报错，只是邮件里少一块名单。
+          TOP10_PROFILE_JSON: ${{ secrets.TOP10_PROFILE_JSON }}
         # --require-mail：发信没配好就直接让这次运行失败，
         # 而不是悄悄把邮件写成文件、让人误以为一切正常。
         run: >-

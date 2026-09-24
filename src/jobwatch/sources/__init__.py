@@ -6,9 +6,18 @@ from .alibaba import AlibabaAidcSource
 from .apple import AppleJobsSource
 from .base import JobSource, SourceError
 from .bytedance import ByteDanceSource
+from .tonghuashun import TonghuashunSource
+from .xiaohongshu import XiaohongshuSource
 
 PROVIDERS: dict[str, type[JobSource]] = {
-    cls.provider: cls for cls in (AppleJobsSource, AlibabaAidcSource, ByteDanceSource)
+    cls.provider: cls
+    for cls in (
+        AppleJobsSource,
+        AlibabaAidcSource,
+        ByteDanceSource,
+        XiaohongshuSource,
+        TonghuashunSource,
+    )
 }
 
 
@@ -35,5 +44,7 @@ __all__ = [
     "JobSource",
     "PROVIDERS",
     "SourceError",
+    "TonghuashunSource",
+    "XiaohongshuSource",
     "build_source",
 ]

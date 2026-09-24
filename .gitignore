@@ -8,3 +8,5 @@ venv/
 .env
 out/
 .cache/
+# 本地匹配口径与 Top10 名单：由业务地图提炼，刻意不进仓库、不上传 GitHub
+local/

@@ -10,8 +10,9 @@ import sys
 import time
 
 from .config import Config
-from .email_render import EmailContent, build_email
+from .email_render import EmailContent, TopSection, build_email
 from .mailer import SMTPMailer, build_mailer, missing_mail_settings
+from .match import MatchProfile, TopState, business_map_due, days_since, rebuild_top10
 from .sources import build_source
 from .store import JobStore
 from .watcher import run_all
@@ -162,6 +163,94 @@ def _cmd_status(args: argparse.Namespace, config: Config) -> int:
     print(f"发件人：{config.mail.from_address or '未设置'}")
     print(f"状态：{'就绪' if not missing else '缺少 ' + '、'.join(missing) + '（将写本地预览）'}")
     print(f"翻译引擎：{config.translation.engine}")
+
+    profile = MatchProfile.load()
+    state = TopState.load()
+    print(f"匹配口径：{_profile_label(profile)}")
+    print(
+        f"Top{profile.top_n}：{len(state.entries)} 个在榜，更新于 {state.updated_at or '从未更新'}"
+    )
+    if profile.business_map_path:
+        waited = days_since(state.business_map_reminded_at)
+        state_text = "待提醒" if business_map_due(profile, state) else "已提醒"
+        print(
+            f"业务地图：{profile.business_map_path}"
+            f"（{'从未提醒' if waited is None else f'上次提醒 {waited} 天前'}·{state_text}）"
+        )
+    return 0
+
+
+def _profile_label(profile: MatchProfile) -> str:
+    if profile.loaded_from == "env":
+        return "TOP10_PROFILE_JSON（从环境变量读入）"
+    if profile.source_path:
+        return str(profile.source_path)
+    return "通用默认词表（未找到 local/profile.json）"
+
+
+def _print_top10(state: TopState, profile: MatchProfile) -> None:
+    if not state.entries:
+        return
+    print(f"\n最匹配你的 Top {len(state.entries)}（分数 → 年限门槛低的在前）：\n")
+    for index, entry in enumerate(state.entries, start=1):
+        flag = "　[门槛超配]" if entry.over_bar else ""
+        print(f"{index:>3}. [{entry.score:>3}分] {entry.title}{flag}")
+        print(f"      {entry.where} | {entry.source_id} | 年限：{entry.years_label}")
+        print(f"      匹配点：{'、'.join(entry.hits) or '—'}")
+        if entry.reason:
+            print(f"      对口：{entry.reason}")
+        if entry.blocker:
+            print(f"      卡点：{entry.blocker}")
+        print(f"      {entry.url}\n")
+    if state.watch:
+        print("方向对口但门槛超配、挂在观察名单：")
+        for entry in state.watch:
+            print(f"  · {entry.title}（{entry.where}，{entry.years_label}）")
+        print()
+
+
+def _cmd_top10(args: argparse.Namespace, config: Config) -> int:
+    """看当前名单，或用 --rebuild 按口径重算一份。"""
+    profile = MatchProfile.load()
+    state = TopState.load()
+
+    if not args.rebuild:
+        if not state.entries:
+            print("还没有名单。先跑一次 `python -m jobwatch top10 --rebuild` 建一份。")
+            return 1
+        if args.json:
+            print(
+                json.dumps(
+                    [entry.to_dict() for entry in state.entries],
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+            return 0
+        _print_top10(state, profile)
+        print(f"口径来源：{_profile_label(profile)}")
+        print(f"名单文件：{state.path}")
+        return 0
+
+    only = _selected(args)
+    candidates = []
+    for spec in config.sources:
+        if only and spec.source_id not in only:
+            continue
+        source = build_source(
+            spec, timeout=config.request_timeout, retries=config.request_retries
+        )
+        jobs = source.list_jobs()
+        candidates += [
+            (ref, spec.source_id, spec.display_name) for ref in jobs
+        ]
+        print(f"{spec.display_name}：{len(jobs)} 个岗位参与打分")
+
+    picked = rebuild_top10(profile, state, candidates=candidates)
+    state.save()
+    print(f"\n已重建 Top{len(picked)}，共 {len(candidates)} 个岗位参与排序。")
+    print(f"口径来源：{_profile_label(profile)}")
+    _print_top10(state, profile)
     return 0
 
 
@@ -181,6 +270,16 @@ def _cmd_preview(args: argparse.Namespace, config: Config) -> int:
             print(f"{spec.display_name}：当前没有岗位，跳过预览")
             continue
         postings, engine = _build_postings(config, source, jobs)
+        state = TopState.load()
+        top_section = (
+            TopSection(
+                entries=list(state.entries),
+                updated_at=state.updated_at,
+                watch=[entry.title for entry in state.watch],
+            )
+            if state.entries
+            else None
+        )
         content = build_email(
             postings,
             source_name=spec.display_name,
@@ -188,6 +287,10 @@ def _cmd_preview(args: argparse.Namespace, config: Config) -> int:
             subject_prefix=config.mail.subject_prefix,
             translation_note=f"已翻译为中文（引擎：{engine}）。" if spec.translate else "",
             untranslated_warning=spec.translate and engine == "none",
+            top_section=top_section,
+            reminder="业务地图该更新了（这是 preview 出来的提醒示例，真实提醒按 30 天间隔触发）。"
+            if args.with_reminder
+            else "",
         )
         mailer = build_mailer(
             config.mail, spec.recipients, config.output_dir, dry_run=not args.send
@@ -300,6 +403,11 @@ def build_parser() -> argparse.ArgumentParser:
     preview = sub.add_parser("preview", help="用真实岗位渲染一封邮件预览")
     preview.add_argument("--limit", type=int, default=2, help="取最新的几个岗位，默认 2")
     preview.add_argument("--send", action="store_true", help="真的发出这封预览邮件")
+    preview.add_argument(
+        "--with-reminder",
+        action="store_true",
+        help="顺便把「更新业务地图」的月度提醒也渲染进去，方便看版式",
+    )
     add_source_filter(preview)
     preview.set_defaults(func=_cmd_preview)
 
@@ -310,6 +418,12 @@ def build_parser() -> argparse.ArgumentParser:
     seed = sub.add_parser("seed", help="把当前岗位记为基线（不发邮件）")
     add_source_filter(seed)
     seed.set_defaults(func=_cmd_seed)
+
+    top10 = sub.add_parser("top10", help="查看「最匹配你的 Top N」名单，或按口径重建")
+    top10.add_argument("--rebuild", action="store_true", help="重新抓全部来源、按口径重排名单")
+    top10.add_argument("--json", action="store_true", help="以 JSON 输出当前名单")
+    add_source_filter(top10)
+    top10.set_defaults(func=_cmd_top10)
 
     return parser
 
