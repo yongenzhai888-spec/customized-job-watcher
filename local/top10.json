@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updated_at": "2026-09-24T03:59:11+00:00",
+  "updated_at": "2026-10-03T06:06:03+00:00",
   "business_map_reminded_at": "2026-09-24T03:59:18+00:00",
-  "top10_attached_on": "2026-10-01",
+  "top10_attached_on": "2026-10-03",
   "entries": [
     {
       "job_id": "7362083349445445939",
@@ -129,28 +129,6 @@
         "TikTok Shop",
         "商家",
         "平台",
-        "产品经理"
-      ],
-      "reason": "",
-      "blocker": "",
-      "entered_at": "2026-09-24T03:59:11+00:00",
-      "over_bar": false
-    },
-    {
-      "job_id": "100025775016",
-      "title": "阿里国际-产品经理（物流业财）-杭州",
-      "url": "https://aidc-jobs.alibaba.com/off-campus/position-detail?positionId=100025775016",
-      "source_id": "alibaba-aidc",
-      "source_name": "阿里国际 AIDC · 产品类 / 数据类",
-      "locations": [
-        "杭州"
-      ],
-      "years": 3,
-      "score": 27,
-      "hits": [
-        "阿里国际",
-        "物流",
-        "业财",
         "产品经理"
       ],
       "reason": "",
