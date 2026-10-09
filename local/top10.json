@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updated_at": "2026-10-03T06:06:03+00:00",
+  "updated_at": "2026-10-09T07:09:41+00:00",
   "business_map_reminded_at": "2026-09-24T03:59:18+00:00",
-  "top10_attached_on": "2026-10-08",
+  "top10_attached_on": "2026-10-09",
   "entries": [
     {
       "job_id": "7362083349445445939",
@@ -200,6 +200,29 @@
       "reason": "",
       "blocker": "",
       "entered_at": "2026-09-24T03:59:11+00:00",
+      "over_bar": false
+    },
+    {
+      "job_id": "7694191764386974005",
+      "title": "商家AI解决方案产品经理 - 抖音电商",
+      "url": "https://jobs.bytedance.com/experienced/position/7694191764386974005/detail",
+      "source_id": "bytedance-product",
+      "source_name": "字节跳动 / TikTok · 产品类",
+      "locations": [
+        "北京"
+      ],
+      "years": null,
+      "score": 14,
+      "hits": [
+        "商家",
+        "电商",
+        "解决方案",
+        "产品经理",
+        "−抖音电商"
+      ],
+      "reason": "",
+      "blocker": "",
+      "entered_at": "2026-10-09T07:09:41+00:00",
       "over_bar": false
     }
   ],
