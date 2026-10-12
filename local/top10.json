@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updated_at": "2026-10-09T07:09:41+00:00",
+  "updated_at": "2026-10-12T06:56:35+00:00",
   "business_map_reminded_at": "2026-09-24T03:59:18+00:00",
-  "top10_attached_on": "2026-10-11",
+  "top10_attached_on": "2026-10-12",
   "entries": [
     {
       "job_id": "7362083349445445939",
@@ -203,26 +203,24 @@
       "over_bar": false
     },
     {
-      "job_id": "7694191764386974005",
-      "title": "商家AI解决方案产品经理 - 抖音电商",
-      "url": "https://jobs.bytedance.com/experienced/position/7694191764386974005/detail",
+      "job_id": "7695337302990522629",
+      "title": "商家端AI产品经理-TikTok Shop",
+      "url": "https://jobs.bytedance.com/experienced/position/7695337302990522629/detail",
       "source_id": "bytedance-product",
       "source_name": "字节跳动 / TikTok · 产品类",
       "locations": [
-        "北京"
+        "上海"
       ],
       "years": null,
-      "score": 14,
+      "score": 21,
       "hits": [
+        "TikTok Shop",
         "商家",
-        "电商",
-        "解决方案",
-        "产品经理",
-        "−抖音电商"
+        "产品经理"
       ],
       "reason": "",
       "blocker": "",
-      "entered_at": "2026-10-09T07:09:41+00:00",
+      "entered_at": "2026-10-12T06:56:35+00:00",
       "over_bar": false
     }
   ],
