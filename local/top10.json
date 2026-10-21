@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updated_at": "2026-10-20T05:42:21+00:00",
+  "updated_at": "2026-10-21T05:44:07+00:00",
   "business_map_reminded_at": "2026-09-24T03:59:18+00:00",
-  "top10_attached_on": "2026-10-20",
+  "top10_attached_on": "2026-10-21",
   "entries": [
     {
       "job_id": "7362083349445445939",
@@ -24,6 +24,28 @@
       "reason": "",
       "blocker": "",
       "entered_at": "2026-09-24T03:59:11+00:00",
+      "over_bar": false
+    },
+    {
+      "job_id": "7698625225357658373",
+      "title": "供应链补货计划产品经理-TikTok Shop",
+      "url": "https://jobs.bytedance.com/experienced/position/7698625225357658373/detail",
+      "source_id": "bytedance-product",
+      "source_name": "字节跳动 / TikTok · 产品类",
+      "locations": [
+        "上海"
+      ],
+      "years": null,
+      "score": 33,
+      "hits": [
+        "TikTok Shop",
+        "供应链",
+        "补货",
+        "产品经理"
+      ],
+      "reason": "",
+      "blocker": "",
+      "entered_at": "2026-10-21T05:44:07+00:00",
       "over_bar": false
     },
     {
@@ -199,27 +221,6 @@
       "reason": "",
       "blocker": "",
       "entered_at": "2026-10-20T05:42:21+00:00",
-      "over_bar": false
-    },
-    {
-      "job_id": "7685726337621133621",
-      "title": "交易链路产品经理-TikTok Shop",
-      "url": "https://jobs.bytedance.com/experienced/position/7685726337621133621/detail",
-      "source_id": "bytedance-product",
-      "source_name": "字节跳动 / TikTok · 产品类",
-      "locations": [
-        "上海"
-      ],
-      "years": null,
-      "score": 19,
-      "hits": [
-        "TikTok Shop",
-        "交易",
-        "产品经理"
-      ],
-      "reason": "",
-      "blocker": "",
-      "entered_at": "2026-10-16T05:25:19+00:00",
       "over_bar": false
     }
   ],
