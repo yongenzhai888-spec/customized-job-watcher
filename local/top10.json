@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updated_at": "2026-10-21T05:44:07+00:00",
+  "updated_at": "2026-10-27T05:58:13+00:00",
   "business_map_reminded_at": "2026-10-24T05:22:30+00:00",
-  "top10_attached_on": "2026-10-26",
+  "top10_attached_on": "2026-10-27",
   "entries": [
     {
       "job_id": "7362083349445445939",
@@ -182,6 +182,27 @@
       "over_bar": false
     },
     {
+      "job_id": "7699377049513183541",
+      "title": "独立端产品经理（交易导购方向）-TikTok Shop",
+      "url": "https://jobs.bytedance.com/experienced/position/7699377049513183541/detail",
+      "source_id": "bytedance-product",
+      "source_name": "字节跳动 / TikTok · 产品类",
+      "locations": [
+        "上海"
+      ],
+      "years": 3,
+      "score": 22,
+      "hits": [
+        "TikTok Shop",
+        "交易",
+        "产品经理"
+      ],
+      "reason": "",
+      "blocker": "",
+      "entered_at": "2026-10-27T05:58:13+00:00",
+      "over_bar": false
+    },
+    {
       "job_id": "7695337302990522629",
       "title": "商家端AI产品经理-TikTok Shop",
       "url": "https://jobs.bytedance.com/experienced/position/7695337302990522629/detail",
@@ -200,27 +221,6 @@
       "reason": "",
       "blocker": "",
       "entered_at": "2026-10-12T06:56:35+00:00",
-      "over_bar": false
-    },
-    {
-      "job_id": "7656800635958921525",
-      "title": "交易产品经理（拉美市场）-TikTok Shop",
-      "url": "https://jobs.bytedance.com/experienced/position/7656800635958921525/detail",
-      "source_id": "bytedance-product",
-      "source_name": "字节跳动 / TikTok · 产品类",
-      "locations": [
-        "上海"
-      ],
-      "years": null,
-      "score": 19,
-      "hits": [
-        "TikTok Shop",
-        "交易",
-        "产品经理"
-      ],
-      "reason": "",
-      "blocker": "",
-      "entered_at": "2026-10-20T05:42:21+00:00",
       "over_bar": false
     }
   ],
